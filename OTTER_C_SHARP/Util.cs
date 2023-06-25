@@ -24,5 +24,10 @@ namespace Otter
             }
             return sum;
         }
+
+        public static void SetBitArrayToInt32(BitArray bits, Int32 src)
+        {
+            CopyBits(bits, new BitArray(new Int32[] {src}));
+        }
     }
 }
