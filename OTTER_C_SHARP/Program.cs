@@ -6,7 +6,7 @@ namespace Otter
     {
         public static void Main(string[] args)
         {
-            MCU otter = new MCU();
+            MCU otter = new MCU(); //create OTTER object
         }
     }
     
@@ -48,15 +48,22 @@ namespace Otter
 
             /*initialize components*/
             CompPC pc = new CompPC(reset, pcWrite, pcIn, pcOut, clock);
+            CompMUX pcMux = new CompMUX(new BitArray[6] {pc4, jalr, branch, jal, mtvec, mepc}, pcIn, pcSource);
+
             clock[0] = true;
-            pcIn[0] = true;
-            pcWrite[0] = true;
-            Console.WriteLine(pcOut[0]);
-            pc.Update();
-            Console.WriteLine(pcOut[0]);
-            reset[0] = true;
-            pc.Update();
-            Console.WriteLine(pcOut[0]);
+
+            Console.WriteLine("PC IN: {0}\nPC OUT: {1}\n", Util.BitArrayToInt32(pcIn), Util.BitArrayToInt32(pcOut));
+            pcSource[0] = true; //pcSource=1
+            jalr[0] = true; //jalr=1
+            pcMux.Update(); //mux out=1
+            Console.WriteLine("PC IN: {0}\nPC OUT: {1}\n", Util.BitArrayToInt32(pcIn), Util.BitArrayToInt32(pcOut));
+
+            pcWrite[0] = true; //write=on
+            pc.Update(); //pc out = jalr = 1
+            Console.WriteLine("PC IN: {0}\nPC OUT: {1}\n", Util.BitArrayToInt32(pcIn), Util.BitArrayToInt32(pcOut));
+            reset[0] = true; //reset  = 1
+            pc.Update(); //pc out = 0
+            Console.WriteLine("PC IN: {0}\nPC OUT: {1}\n", Util.BitArrayToInt32(pcIn), Util.BitArrayToInt32(pcOut));
         }
     }
 }

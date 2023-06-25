@@ -33,34 +33,30 @@ namespace Otter
                 }
                 else if (pcWrite[0])
                 {
-                    for(int i = 0; i<output.Length; i++)
-                    {
-                        output.Set(i, input[i]);
-                    }
+                    Util.CopyBits(output, input);
                 }
             }
         }
         
     }
-    /*
+    
     internal class CompMUX : Component
     {
-        UInt32 * [] inputs;
-        UInt32 * output;
-        UInt32 * sel;
+        BitArray[] inputs;
+        BitArray output;
+        BitArray sel;
 
-        public CompMUX(UInt32* []inputs, UInt32 *output, UInt32 *sel)
+        public CompMUX(BitArray[] inputs, BitArray output, BitArray sel)
         {
             this.inputs = inputs;
             this.output = output;
             this.sel = sel;
-            Console.WriteLine((int)(&inputs));
         }
 
         public void Update()
         {
-            *output = *inputs[*sel];
+            Util.CopyBits(output, inputs[Util.BitArrayToInt32(sel)]);
         }
     }
-    */
+    
 }
