@@ -27,6 +27,7 @@ namespace Otter
         CompMUX pcMux;
         CompMemory memory;
         CompRegFile regFile;
+        CompMUX regFileMux;
         Component[] components;
 
         /*signals*/
@@ -41,8 +42,8 @@ namespace Otter
         //Memory
         BitArray memRdEn1, memRdEn2, memWE2, ir, result, memOut2, iobusIn, ioWr;
 
-        //Reg File
-        BitArray regWrite, regWD, rs1Out, rs2Out;
+        //Reg File and Mux
+        BitArray regWrite, regWD, rs1Out, rs2Out, rfWrSel, csrRD;
 
         public MCU()
         {
@@ -79,6 +80,8 @@ namespace Otter
             regWD = new BitArray(32);
             rs1Out = new BitArray(32);
             rs2Out = new BitArray(32);
+            csrRD= new BitArray(32);
+            rfWrSel = new BitArray(1);
 
 
             /*initialize components*/
@@ -86,8 +89,11 @@ namespace Otter
             pcMux = new CompMUX(new BitArray[6] {pc4, jalr, branch, jal, mtvec, mepc}, pcIn, pcSource);
             memory = new CompMemory(memRdEn1, memRdEn2, memWE2, clock, pcOut, result, rs2Out, ir, iobusIn, memOut2, ioWr);
             regFile = new CompRegFile(ir, clock, regWD, regWrite, rs1Out, rs2Out);
-            components = new Component[] { pcMux, pc, memory, regFile }; //array to iterate through to update
+            regFileMux = new CompMUX(new BitArray[] { pc4, csrRD, memOut2, result }, regWD, rfWrSel);
+            components = new Component[] { pcMux, pc, memory, regFile, regFileMux }; //array to iterate through to update
 
+
+            //testing
             clock[0] = true;
 
             /*
@@ -121,7 +127,7 @@ namespace Otter
             UpdateAll(); //ir is updated
             Console.WriteLine("Memory Out 1: {0}", Util.BitArrayToInt32(ir));
             */
-
+            /*
             Console.WriteLine("RegFile reg 1 before:\n{0}", Util.BitsToString(regFile.Regs[1]));
             regWD[0] = true; //write data =1
             ir[7] = true; //wa =1
@@ -135,14 +141,23 @@ namespace Otter
             UpdateAll(); //adr1 and adr2 show 1
             Console.WriteLine("RS1:\n{0}", Util.BitsToString(rs1Out));
             Console.WriteLine("RS2:\n{0}", Util.BitsToString(rs2Out));
+            */
         }
 
         public void UpdateAll()
         {
+            //call Update for all components
             foreach(Component c in components)
             {
                 c.Update();
+
+                if(c==pc)
+                {
+                    //add 4 to pc4
+                    Util.SetBitArrayToInt32(pc4, Util.BitArrayToInt32(pcOut) + 4);
+                }
             }
+
         }
 
         public void PrintMem()
