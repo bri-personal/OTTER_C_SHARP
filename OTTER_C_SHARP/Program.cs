@@ -75,7 +75,7 @@ namespace Otter
             /*initialize components*/
             pc = new CompPC(reset, pcWrite, pcIn, pcOut, clock);
             pcMux = new CompMUX(new BitArray[6] {pc4, jalr, branch, jal, mtvec, mepc}, pcIn, pcSource);
-            memory = new CompMemory(memRdEn1, memRdEn2, memWE2, clock, pcOut, result, rs2Out, ir, iobusIn, ir, memOut2, ioWr);
+            memory = new CompMemory(memRdEn1, memRdEn2, memWE2, clock, pcOut, result, rs2Out, ir, iobusIn, memOut2, ioWr);
             components = new Component[] { pcMux, pc, memory }; //array to iterate through to update
 
             clock[0] = true;
@@ -94,8 +94,7 @@ namespace Otter
             memWE2[0]= true; //memory write=on
             rs2Out.SetAll(true); //memory din2 set to 1s
             result[0]=true; //memory addr2 = 1
-            ir[12] = true; //size =16
-            ir[14] = true; //unsigned
+            ir[14] = true; //unsigned (size=8)
             UpdateAll(); //memory is 8 '0's followed by 8 '1's
             PrintMem();
 
@@ -104,8 +103,8 @@ namespace Otter
             UpdateAll(); //memout2 is updated
             Console.WriteLine("Memory Out 2: {0}", Util.BitArrayToInt32(memOut2));
 
-            ir[12] = false;
-            ir[14] = false;
+            ir[12] = false; //reset size to not interfere
+            ir[14] = false; //reset sign to not interfere
             memRdEn1[0] = true; //memory read1 = on
             memRdEn2[0] = false; //memory read2 = off
             UpdateAll(); //ir is updated

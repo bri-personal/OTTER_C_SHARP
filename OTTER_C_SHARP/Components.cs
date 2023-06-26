@@ -66,14 +66,13 @@ namespace Otter
         BitArray we2;
         BitArray clock;
         BitArray addr1, addr2, dIn2;
-        BitArray ir; //for size and sign
         BitArray ioIn;
-        BitArray dOut1, dOut2;
+        BitArray ir, dOut2; //ir also used for size and sign
         BitArray ioWr;
 
         BitArray mem;
 
-        public CompMemory(BitArray rdEn1, BitArray rdEn2, BitArray we2, BitArray clock, BitArray addr1, BitArray addr2, BitArray dIn2, BitArray ir, BitArray ioIn, BitArray dOut1, BitArray dOut2, BitArray ioWr)
+        public CompMemory(BitArray rdEn1, BitArray rdEn2, BitArray we2, BitArray clock, BitArray addr1, BitArray addr2, BitArray dIn2, BitArray ir, BitArray ioIn, BitArray dOut2, BitArray ioWr)
         {
             this.rdEn1 = rdEn1;
             this.rdEn2 = rdEn2;
@@ -84,7 +83,6 @@ namespace Otter
             this.dIn2 = dIn2;
             this.ir = ir;
             this.ioIn = ioIn;
-            this.dOut1 = dOut1;
             this.dOut2 = dOut2;
             this.ioWr = ioWr;
 
@@ -99,8 +97,10 @@ namespace Otter
             {
                 if (rdEn1[0])
                 {
-                    //copy 32 bits from instruction (from text segment) to dOut1
-                    Util.CopyBits(dOut1, mem, Util.BitArrayToInt32(addr1) * 8);
+                    //copy 32 bits from instruction (from text segment) to ir
+                    Console.WriteLine("dOut1 before:\n{0}", Util.BitsToString(ir));
+                    Util.CopyBits(ir, mem, Util.BitArrayToInt32(addr1) * 8);
+                    Console.WriteLine("dOut1 copied:\n{0}", Util.BitsToString(ir));
                 }
 
                 //get size for read/write from data segment
@@ -124,12 +124,12 @@ namespace Otter
                     Console.WriteLine("Addr2: {0}",Util.BitArrayToInt32(addr2));
 
                     //copy size # of bits from mem to dOut2 and extend to 32 bits
-                    Console.WriteLine("dOut2 before: {0}", Util.BitArrayToInt32(dOut2));
+                    Console.WriteLine("dOut2 before:\n{0}", Util.BitsToString(dOut2));
                     Util.CopyBits(dOut2, mem, Util.BitArrayToInt32(addr2) * 8, size);
-                    Console.WriteLine("dOut2 copied: {0}", Util.BitArrayToInt32(dOut2));
+                    Console.WriteLine("dOut2 copied:\n{0}", Util.BitsToString(dOut2));
                     if (ir[14]) //0 extend
                     {
-                        for(int i= Util.BitArrayToInt32(addr2) * 8+size; i<dOut2.Length; i++)
+                        for(int i= Util.BitArrayToInt32(addr2) * 8+size; i < dOut2.Length; i++)
                         {
                             dOut2[i] = false;
                         }
@@ -141,7 +141,7 @@ namespace Otter
                             dOut2[i] = dOut2[size-1];
                         }
                     }
-                    Console.WriteLine("dOut2 extended: {0}", Util.BitArrayToInt32(dOut2));
+                    Console.WriteLine("dOut2 extended:\n{0}", Util.BitsToString(dOut2));
                 }
                 if (we2[0]) //store
                 {
@@ -152,4 +152,27 @@ namespace Otter
         }
     }
     
+    /*
+    internal class CompRegFile : Component
+    {
+        private BitArray[] regs;
+        public CompRegFile()
+        {
+            BitArray adr1, adr2, wa;
+
+
+            //initialize registers
+            regs = new BitArray[32];
+            for(int i= 0; i < regs.Length; i++)
+            {
+                regs[i]=new BitArray(32);
+            }
+        }
+
+        public void Update()
+        {
+
+        
+    */}
+    }
 }
