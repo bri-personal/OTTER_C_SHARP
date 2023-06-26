@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.ComponentModel.DataAnnotations;
 
 namespace Otter
 {
@@ -56,6 +57,98 @@ namespace Otter
         public void Update()
         {
             Util.CopyBits(output, inputs[Util.BitArrayToInt32(sel)]);
+        }
+    }
+
+    internal class CompMemory : Component
+    {
+        BitArray rdEn1, rdEn2;
+        BitArray we2;
+        BitArray clock;
+        BitArray addr1, addr2, dIn2;
+        BitArray ir; //for size and sign
+        BitArray ioIn;
+        BitArray dOut1, dOut2;
+        BitArray ioWr;
+
+        BitArray mem;
+
+        public CompMemory(BitArray rdEn1, BitArray rdEn2, BitArray we2, BitArray clock, BitArray addr1, BitArray addr2, BitArray dIn2, BitArray ir, BitArray ioIn, BitArray dOut1, BitArray dOut2, BitArray ioWr)
+        {
+            this.rdEn1 = rdEn1;
+            this.rdEn2 = rdEn2;
+            this.we2 = we2;
+            this.clock = clock;
+            this.addr1 = addr1;
+            this.addr2 = addr2;
+            this.dIn2 = dIn2;
+            this.ir = ir;
+            this.ioIn = ioIn;
+            this.dOut1 = dOut1;
+            this.dOut2 = dOut2;
+            this.ioWr = ioWr;
+
+            mem = new BitArray(1024);
+        }
+
+        public BitArray Mem { get => mem; }
+
+        public void Update()
+        {
+            if (clock[0])
+            {
+                if (rdEn1[0])
+                {
+                    //copy 32 bits from instruction (from text segment) to dOut1
+                    Util.CopyBits(dOut1, mem, Util.BitArrayToInt32(addr1) * 8);
+                }
+
+                //get size for read/write from data segment
+                int size;
+                if (!ir[12] && !ir[13]) //size=0 -> byte
+                {
+                    size = 8;
+                }
+                else if (ir[12] && !ir[13]) //size=1 -> halfword
+                {
+                    size = 16;
+                }
+                else //size=2 or 3 (default) -> word
+                {
+                    size = 32;
+                }
+                Console.WriteLine("Size to read/write: {0}",size);
+
+                if (rdEn2[0]) //load
+                {
+                    Console.WriteLine("Addr2: {0}",Util.BitArrayToInt32(addr2));
+
+                    //copy size # of bits from mem to dOut2 and extend to 32 bits
+                    Console.WriteLine("dOut2 before: {0}", Util.BitArrayToInt32(dOut2));
+                    Util.CopyBits(dOut2, mem, Util.BitArrayToInt32(addr2) * 8, size);
+                    Console.WriteLine("dOut2 copied: {0}", Util.BitArrayToInt32(dOut2));
+                    if (ir[14]) //0 extend
+                    {
+                        for(int i= Util.BitArrayToInt32(addr2) * 8+size; i<dOut2.Length; i++)
+                        {
+                            dOut2[i] = false;
+                        }
+                    }
+                    else //sign extend
+                    {
+                        for (int i = Util.BitArrayToInt32(addr2) * 8+size; i < dOut2.Length; i++)
+                        {
+                            dOut2[i] = dOut2[size-1];
+                        }
+                    }
+                    Console.WriteLine("dOut2 extended: {0}", Util.BitArrayToInt32(dOut2));
+                }
+                if (we2[0]) //store
+                {
+                    //copy size # of bits from dIn2 to mem
+                    Util.CopyBits(mem, dIn2, len: size, destStart: Util.BitArrayToInt32(addr2) * 8);
+                }
+            }
         }
     }
     
