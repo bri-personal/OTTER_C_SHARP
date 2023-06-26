@@ -12,14 +12,14 @@ namespace Otter
             }
         }
 
-        public static Int32 BitArrayToInt32(BitArray bits)
+        public static Int32 BitArrayToInt32(BitArray bits, Int32 start=0, Int32 len=32)
         {
             Int32 sum = 0;
-            for (int i = 0; i < bits.Length && i<32; i++)
+            for (int i = start; i<start+len && i < bits.Length && i-start<32; i++)
             {
                 if (bits[i])
                 {
-                    sum += 1 << i;
+                    sum += 1 << (i-start);
                 }
             }
             return sum;

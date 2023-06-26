@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.ComponentModel.DataAnnotations;
+using System.Security.Cryptography;
 
 namespace Otter
 {
@@ -152,14 +153,25 @@ namespace Otter
         }
     }
     
-    /*
+    
     internal class CompRegFile : Component
     {
-        private BitArray[] regs;
-        public CompRegFile()
-        {
-            BitArray adr1, adr2, wa;
+        BitArray ir; //includes adr1, adr2, wa
+        BitArray clock;
+        BitArray wd;
+        BitArray en;
+        BitArray rs1, rs2;
 
+        private BitArray[] regs;
+
+        public CompRegFile(BitArray ir, BitArray clock, BitArray wd, BitArray en, BitArray rs1, BitArray rs2)
+        {
+            this.ir = ir;
+            this.clock = clock;
+            this.wd = wd;
+            this.en = en;
+            this.rs1 = rs1;
+            this.rs2 = rs2;
 
             //initialize registers
             regs = new BitArray[32];
@@ -169,10 +181,22 @@ namespace Otter
             }
         }
 
+        public BitArray[] Regs { get => regs; }
+
         public void Update()
         {
+            //asynch read
+            Util.CopyBits(rs1, regs[Util.BitArrayToInt32(ir, 15, 5)]);
+            Util.CopyBits(rs2, regs[Util.BitArrayToInt32(ir, 20, 5)]);
 
-        
-    */}
+            //synch write
+            if (clock[0])
+            {
+                if (en[0])
+                {
+                    Util.CopyBits(regs[Util.BitArrayToInt32(ir, 7, 5)], wd);
+                }
+            }
+        }
     }
 }

@@ -26,6 +26,7 @@ namespace Otter
         CompPC pc;
         CompMUX pcMux;
         CompMemory memory;
+        CompRegFile regFile;
         Component[] components;
 
         /*signals*/
@@ -38,7 +39,10 @@ namespace Otter
         BitArray pc4, jalr, branch, jal, mtvec, mepc, pcSource;
 
         //Memory
-        BitArray memRdEn1, memRdEn2, memWE2, ir, result, rs2Out, memOut2, iobusIn, ioWr;
+        BitArray memRdEn1, memRdEn2, memWE2, ir, result, memOut2, iobusIn, ioWr;
+
+        //Reg File
+        BitArray regWrite, regWD, rs1Out, rs2Out;
 
         public MCU()
         {
@@ -66,20 +70,27 @@ namespace Otter
             memWE2 = new BitArray(1);
             ir = new BitArray(32);
             result = new BitArray(32);
-            rs2Out = new BitArray(32);
             memOut2 = new BitArray(32);
             iobusIn = new BitArray(32);
             ioWr = new BitArray(1);
+
+            //Reg File
+            regWrite=new BitArray(1);
+            regWD = new BitArray(32);
+            rs1Out = new BitArray(32);
+            rs2Out = new BitArray(32);
 
 
             /*initialize components*/
             pc = new CompPC(reset, pcWrite, pcIn, pcOut, clock);
             pcMux = new CompMUX(new BitArray[6] {pc4, jalr, branch, jal, mtvec, mepc}, pcIn, pcSource);
             memory = new CompMemory(memRdEn1, memRdEn2, memWE2, clock, pcOut, result, rs2Out, ir, iobusIn, memOut2, ioWr);
-            components = new Component[] { pcMux, pc, memory }; //array to iterate through to update
+            regFile = new CompRegFile(ir, clock, regWD, regWrite, rs1Out, rs2Out);
+            components = new Component[] { pcMux, pc, memory, regFile }; //array to iterate through to update
 
             clock[0] = true;
-            
+
+            /*
             Console.WriteLine("PC IN: {0}\nPC OUT: {1}\n", Util.BitArrayToInt32(pcIn), Util.BitArrayToInt32(pcOut));
             pcSource[0] = true; //pcSource=1
             jalr[0] = true; //jalr=1
@@ -109,6 +120,21 @@ namespace Otter
             memRdEn2[0] = false; //memory read2 = off
             UpdateAll(); //ir is updated
             Console.WriteLine("Memory Out 1: {0}", Util.BitArrayToInt32(ir));
+            */
+
+            Console.WriteLine("RegFile reg 1 before:\n{0}", Util.BitsToString(regFile.Regs[1]));
+            regWD[0] = true; //write data =1
+            ir[7] = true; //wa =1
+            regWrite[0] = true; //regfile write enable= on
+            UpdateAll(); //1 written to register 1
+            Console.WriteLine("RegFile reg 1 written:\n{0}", Util.BitsToString(regFile.Regs[1]));
+
+            regWrite[0] = false; //regfile write = off
+            ir[15] = true; //adr1 = 1
+            ir[20] = true; //adr2 =1
+            UpdateAll(); //adr1 and adr2 show 1
+            Console.WriteLine("RS1:\n{0}", Util.BitsToString(rs1Out));
+            Console.WriteLine("RS2:\n{0}", Util.BitsToString(rs2Out));
         }
 
         public void UpdateAll()
