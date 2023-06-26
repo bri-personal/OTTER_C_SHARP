@@ -29,5 +29,15 @@ namespace Otter
         {
             CopyBits(bits, new BitArray(new Int32[] {src}));
         }
+
+        public static string BitsToString(BitArray bits, Int32 len=32)
+        {
+            string s = "";
+            for (int i = 0; i < len; i++)
+            {
+                s += (bits[i] ? 1 : 0) + " ";
+            }
+            return s;
+        }
     }
 }
