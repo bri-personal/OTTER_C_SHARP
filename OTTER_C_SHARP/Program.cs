@@ -1,7 +1,4 @@
-﻿using System.Collections;
-using System.ComponentModel.DataAnnotations;
-
-namespace Otter
+﻿namespace Otter
 {
     public class Program
     {
@@ -14,8 +11,14 @@ namespace Otter
     public class MCU
     {
         //bitmask constants
-        private const Int32 OPCODE_MASK = 0x7F;
-        private const Int32 FUNC3_MASK = 0x00007000;
+        private const UInt32 OPCODE_MASK =  0x0000007F;
+        private const UInt32 FUNC3_MASK =   0x00007000;
+        private const UInt32 U_IMMED_MASK = 0xFFFFF000;
+        private const UInt32 RD_MASK =      0x00000F80;
+        private const UInt32 RS1_MASK =     0x000F8000;
+        private const UInt32 RS2_MASK =     0x01F00000;
+        private const UInt32 MSB7_MASK =    0xFE000000;
+        private const UInt32 CSR_MASK =     0xFFF00000;
 
         //opcode constants
         private const byte LUI_OPCODE = 0x37;
@@ -38,8 +41,8 @@ namespace Otter
         private Int32[] regs; //data registers - length 32 array of length 32 BitArrays
         Int32 ir; //array to hold instruction read from text segment file
 
-        FileStream text; //file for text segment of memory
-        BinaryReader textReader; //reader for text segment of memory
+        FileStream? text; //file for text segment of memory
+        BinaryReader? textReader; //reader for text segment of memory
 
         public MCU()
         {
@@ -74,8 +77,8 @@ namespace Otter
 
         private void LoadInstruction()
         {
-            text.Seek(pc, SeekOrigin.Begin);
-            ir = textReader.ReadInt32();
+            text!.Seek(pc, SeekOrigin.Begin);
+            ir = textReader!.ReadInt32();
             pc = (Int32)text.Seek(0, SeekOrigin.Current);
         }
 
@@ -85,22 +88,22 @@ namespace Otter
             {
                 case LUI_OPCODE:
                     {
-                        Console.WriteLine("lui");
+                        Console.WriteLine("lui x{0} 0x{1}", GetRD(), Convert.ToString(GenerateImmed_U()>>12, 16));
                         break;
                     }
                 case AUIPC_OPCODE:
                     {
-                        Console.WriteLine("auipc");
+                        Console.WriteLine("auipc x{0} 0x{1}", GetRD(), Convert.ToString(GenerateImmed_U()>>12, 16));
                         break;
                     }
                 case JAL_OPCODE:
                     {
-                        Console.WriteLine("jal");
+                        Console.WriteLine("jal x{0} 0x{1}", GetRD(), Convert.ToString(GenerateImmed_J(), 16));
                         break;
                     }
                 case JALR_OPCODE:
                     {
-                        Console.WriteLine("jalr");
+                        Console.WriteLine("jalr x{0} x{1} 0x{2}", GetRD(), GetRS1(), Convert.ToString(GenerateImmed_I(), 16));
                         break;
                     }
                 case L_OPCODE:
@@ -110,35 +113,36 @@ namespace Otter
                         {
                             case 0:
                                 {
-                                    Console.WriteLine("b");
+                                    Console.Write("b");
                                     break;
                                 }
                             case 1:
                                 {
-                                    Console.WriteLine("h");
+                                    Console.Write("h");
                                     break;
                                 }
                             case 2:
                                 {
-                                    Console.WriteLine("w");
+                                    Console.Write("w");
                                     break;
                                 }
                             case 4:
                                 {
-                                    Console.WriteLine("bu");
+                                    Console.Write("bu");
                                     break;
                                 }
                             case 5:
                                 {
-                                    Console.WriteLine("hu");
+                                    Console.Write("hu");
                                     break;
                                 }
                             default:
                                 {
-                                    Console.WriteLine("UNKNOWN");
+                                    Console.Write("UNKNOWN");
                                     break;
                                 }
                         }
+                        Console.WriteLine(" x{0} 0x{1}(x{2})", GetRD(), Convert.ToString(GenerateImmed_I(), 16), GetRS1());
                         break;
                     }
                 case I_OPCODE:
@@ -147,45 +151,53 @@ namespace Otter
                         {
                             case 0:
                                 {
-                                    Console.WriteLine("addi");
+                                    Console.Write("addi");
                                     break;
                                 }
                             case 1:
                                 {
-                                    Console.WriteLine("slli");
+                                    Console.Write("slli");
                                     break;
                                 }
                             case 2:
                                 {
-                                    Console.WriteLine("slti");
+                                    Console.Write("slti");
                                     break;
                                 }
                             case 3:
                                 {
-                                    Console.WriteLine("sltiu");
+                                    Console.Write("sltiu");
                                     break;
                                 }
                             case 4:
                                 {
-                                    Console.WriteLine("xori");
+                                    Console.Write("xori");
                                     break;
                                 }
                             case 5:
                                 {
-                                    Console.WriteLine("srli/srai");
+                                    if ((ir & MSB7_MASK) == 0)
+                                    {
+                                        Console.Write("srli");
+                                    }
+                                    else
+                                    {
+                                        Console.Write("srai");
+                                    }
                                     break;
                                 }
                             case 6:
                                 {
-                                    Console.WriteLine("ori");
+                                    Console.Write("ori");
                                     break;
                                 }
                             default: //7 - only other option
                                 {
-                                    Console.WriteLine("andi");
+                                    Console.Write("andi");
                                     break;
                                 }
                         }
+                        Console.WriteLine(" x{0} x{1} 0x{2}", GetRD(), GetRS1(), Convert.ToString(GenerateImmed_I(), 16));
                         break;
                     }
                 case B_OPCODE:
@@ -195,40 +207,41 @@ namespace Otter
                         {
                             case 0:
                                 {
-                                    Console.WriteLine("eq");
+                                    Console.Write("eq");
                                     break;
                                 }
                             case 1:
                                 {
-                                    Console.WriteLine("ne");
+                                    Console.Write("ne");
                                     break;
                                 }
                             case 4:
                                 {
-                                    Console.WriteLine("lt");
+                                    Console.Write("lt");
                                     break;
                                 }
                             case 5:
                                 {
-                                    Console.WriteLine("ge");
+                                    Console.Write("ge");
                                     break;
                                 }
                             case 6:
                                 {
-                                    Console.WriteLine("ltu");
+                                    Console.Write("ltu");
                                     break;
                                 }
                             case 7:
                                 {
-                                    Console.WriteLine("geu");
+                                    Console.Write("geu");
                                     break;
                                 }
                             default:
                                 {
-                                    Console.WriteLine("UNKNOWN");
+                                    Console.Write("UNKNOWN");
                                     break;
                                 }
                         }
+                        Console.WriteLine(" x{0} x{1} 0x{2}", GetRS1(), GetRS2(), Convert.ToString(GenerateImmed_B(), 16));
                         break;
                     }
                 case S_OPCODE:
@@ -238,26 +251,27 @@ namespace Otter
                         {
                             case 0:
                                 {
-                                    Console.WriteLine("b");
+                                    Console.Write("b");
                                     break;
                                 }
                             case 1:
                                 {
-                                    Console.WriteLine("h");
+                                    Console.Write("h");
                                     break;
                                 }
                             case 2:
                                 {
-                                    Console.WriteLine("w");
+                                    Console.Write("w");
                                     break;
                                 }
                             default:
                                 {
-                                    Console.WriteLine("UNKNOWN");
+                                    Console.Write("UNKNOWN");
                                     break;
                                 }
                         }
-                                break;
+                        Console.WriteLine(" x{0} 0x{1}(x{2})", GetRS2(), Convert.ToString(GenerateImmed_S(), 16), GetRS1());
+                        break;
                     }
                 case R_OPCODE:
                     {
@@ -265,45 +279,60 @@ namespace Otter
                         {
                             case 0:
                                 {
-                                    Console.WriteLine("add/sub");
+                                    if((ir&MSB7_MASK)==0)
+                                    {
+                                        Console.Write("add");
+                                    }
+                                    else
+                                    {
+                                        Console.Write("sub");
+                                    }
                                     break;
                                 }
                             case 1:
                                 {
-                                    Console.WriteLine("sll");
+                                    Console.Write("sll");
                                     break;
                                 }
                             case 2:
                                 {
-                                    Console.WriteLine("slt");
+                                    Console.Write("slt");
                                     break;
                                 }
                             case 3:
                                 {
-                                    Console.WriteLine("sltu");
+                                    Console.Write("sltu");
                                     break;
                                 }
                             case 4:
                                 {
-                                    Console.WriteLine("xor");
+                                    Console.Write("xor");
                                     break;
                                 }
                             case 5:
                                 {
-                                    Console.WriteLine("srl/sra");
+                                    if ((ir & MSB7_MASK) == 0)
+                                    {
+                                        Console.Write("srl");
+                                    }
+                                    else
+                                    {
+                                        Console.Write("sra");
+                                    }
                                     break;
                                 }
                             case 6:
                                 {
-                                    Console.WriteLine("or");
+                                    Console.Write("or");
                                     break;
                                 }
                             default: //7 - only other option
                                 {
-                                    Console.WriteLine("and");
+                                    Console.Write("and");
                                     break;
                                 }
                         }
+                        Console.WriteLine(" x{0} x{1} x{2}", GetRD(), GetRS1(), GetRS2());
                         break;
                     }
                 case SYS_OPCODE:
@@ -317,24 +346,28 @@ namespace Otter
                                 }
                             case 1:
                                 {
-                                    Console.WriteLine("csrrw");
+                                    Console.Write("csrrw");
                                     break;
                                 }
                             case 2:
                                 {
-                                    Console.WriteLine("csrrs");
+                                    Console.Write("csrrs");
                                     break;
                                 }
                             case 3:
                                 {
-                                    Console.WriteLine("csrrc");
+                                    Console.Write("csrrc");
                                     break;
                                 }
                             default:
                                 {
-                                    Console.WriteLine("csrUNKNOWN");
+                                    Console.Write("csrUNKNOWN");
                                     break;
                                 }
+                        }
+                        if((ir & FUNC3_MASK)!=0)
+                        {
+                            Console.WriteLine(" x{0} 0x{1} x{2}", GetRD(), Convert.ToString(GetCSR(), 16), GetRS1());
                         }
                         break;
                     }
@@ -344,6 +377,84 @@ namespace Otter
                         break;
                     }
             }
+        }
+
+        private Int32 GetRD()
+        {
+            return (Int32) (ir & RD_MASK) >> 7;
+        }
+
+        private Int32 GetRS1()
+        {
+            return (Int32)(ir & RS1_MASK) >> 15;
+        }
+
+        private Int32 GetRS2()
+        {
+            return (Int32)(ir & RS2_MASK) >> 20;
+        }
+
+        private Int32 GetCSR()
+        {
+            return (Int32)(ir & CSR_MASK) >> 20;
+        }
+
+        private Int32 GenerateImmed_I()
+        {
+            Int32 imm=0;
+            for(int i=0; i<32; i++)
+            {
+                imm= imm | ( i<11 ? (ir & (1<<(i+20)))>>20 : (ir& (1<<31))>>(31-i));
+            }
+
+            return imm;
+        }
+
+        private Int32 GenerateImmed_S()
+        {
+            Int32 imm = 0;
+            for (int i = 0; i < 32; i++)
+            {
+                imm = imm | (i < 5 ? (ir & (1 << (i + 7))) >> 7 : (i < 11 ? (ir & (1 << (i + 20))) >> 20 : (ir & (1 << 31)) >> (31 - i)));
+            }
+
+            return imm;
+        }
+
+        private Int32 GenerateImmed_B()
+        {
+            Int32 imm = 0;
+            for (int i = 1; i < 11; i++)
+            {
+                imm = imm | (i < 5 ? (ir & (1 << (i + 7))) >> 7 : (ir & (1 << (i + 20))) >> 20);
+            }
+            imm = imm | (ir & (1<<7))<<4;
+            for(int i=12; i<32; i++)
+            {
+                imm = imm | ((ir & (1 << 31)) >> (31 - i));
+            }
+
+            return imm;
+        }
+
+        private Int32 GenerateImmed_U() //is already left shifted 12 bits
+        {
+            return (Int32) (ir & U_IMMED_MASK);
+        }
+
+        private Int32 GenerateImmed_J() //BAD (adds 1 somehow)
+        {
+            Int32 imm = 0;
+            for(int i=1; i<11; i++)
+            {
+                imm = imm | ((ir & (1<<(i+20)))>>20);
+            }
+            imm = imm | ((ir & (1 << 20))>>9);
+            for (int i = 12; i < 32; i++)
+            {
+                imm = imm | ( i<20 ? (ir & (1 << i)) : (ir&(1<<31))>>(31-i) );
+            }
+            return imm;
         }
     }
 }
