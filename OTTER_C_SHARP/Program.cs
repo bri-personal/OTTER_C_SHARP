@@ -42,8 +42,12 @@
         private UInt32[] regs; //data registers - length 32 array of length 32 BitArrays
         UInt32 ir; //array to hold instruction read from text segment file
 
-        FileStream? text; //file for text segment of memory
-        BinaryReader? textReader; //reader for text segment of memory
+        FileStream text; //file for text segment of memory
+        BinaryReader textReader; //reader for text segment of memory
+
+        FileStream data; //file for data segment of memory
+        BinaryReader dataReader; //reader for data segment of memory
+        BinaryWriter dataWriter; //writer for data segment of memory
 
         public MCU()
         {
@@ -60,14 +64,22 @@
             {
                 using (textReader = new BinaryReader(text))
                 {
-                    while (pc <= 0x2044)
+                    using(data=File.Open("data.mem", FileMode.OpenOrCreate, FileAccess.ReadWrite))
                     {
-                        Run();
+                        using(dataReader= new BinaryReader(data))
+                        {
+                            using(dataWriter= new BinaryWriter(data))
+                            {
+                                while (pc <= 0x2044)
+                                {
+                                    Run();
+                                }
+                                Console.Write(Convert.ToString(pc, 16) + ": ");
+                            }
+                        }
                     }
-                    Console.Write(Convert.ToString(pc, 16) + ": ");
                 }
             }
-            
         }
 
         public void Run()
@@ -80,8 +92,8 @@
 
         private void LoadInstruction()
         {
-            text!.Seek(pc, SeekOrigin.Begin);
-            ir = textReader!.ReadUInt32();
+            text.Seek(pc, SeekOrigin.Begin);
+            ir = textReader.ReadUInt32();
             pc = (UInt32)text.Seek(0, SeekOrigin.Current);
         }
 
