@@ -56,25 +56,26 @@
                 regs[i] = 0;
             }
 
-            Run();
-        }
-
-        public void Run()
-        {
             using (text = File.Open("otter_memory.mem", FileMode.Open, FileAccess.Read))
             {
                 using (textReader = new BinaryReader(text))
                 {
                     while (pc <= 0x2044)
                     {
-                        Console.Write(Convert.ToString(pc, 16) + ": ");
-                        LoadInstruction();
-                        Console.Write(Convert.ToString(ir, 16).PadLeft(8, '0')+" ");
-                        ParseInstruction();
+                        Run();
                     }
                     Console.Write(Convert.ToString(pc, 16) + ": ");
                 }
             }
+            
+        }
+
+        public void Run()
+        {
+            Console.Write(Convert.ToString(pc, 16) + ": ");
+            LoadInstruction();
+            Console.Write(Convert.ToString(ir, 16).PadLeft(8, '0')+" ");
+            ParseInstruction();
         }
 
         private void LoadInstruction()
@@ -115,7 +116,7 @@
                         //write pc+4 to rd and set pc to value in rs1 + i immed
                         Console.WriteLine("jalr x{0} x{1} 0x{2}", GetRD(), GetRS1(), Convert.ToString(GenerateImmed_I(), 16));
                         regs[GetRD()] = pc;
-                        pc = GetRS1() + GenerateImmed_I();
+                        pc = regs[GetRS1()] + GenerateImmed_I();
                         break;
                     }
                 case L_OPCODE:
