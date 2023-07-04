@@ -575,22 +575,87 @@
                         {
                             case 0:
                                 {
+                                    //return execution to where it left off before interrupt, addr given by mepc
                                     Console.WriteLine("mret");
+                                    pc = mepc;
                                     break;
                                 }
                             case 1:
                                 {
+                                    //read csr value into rd and write value of rs1 into csr
                                     Console.Write("csrrw");
+                                    UInt32 csr = GetCSR();
+                                    if(csr==0x341) //mepc
+                                    {
+                                        regs[GetRD()] = mepc;
+                                        mepc = regs[GetRS1()];
+                                    }
+                                    else if (csr == 0x305) //mtvec
+                                    {
+                                        regs[GetRD()] = mtvec;
+                                        mtvec = regs[GetRS1()];
+                                    }
+                                    else if (csr == 0x300) //mstatus
+                                    {
+                                        regs[GetRD()] = mstatus;
+                                        mstatus = regs[GetRS1()];
+                                    }
+                                    else //unimplmented register
+                                    {
+                                        throw new NotImplementedException($"CSR register {csr} not implemented");
+                                    }
                                     break;
                                 }
                             case 2:
                                 {
+                                    //read csr value into rd and set bits of csr corresponding to 1s of value of rs1
                                     Console.Write("csrrs");
+                                    UInt32 csr = GetCSR();
+                                    if (csr == 0x341) //mepc
+                                    {
+                                        regs[GetRD()] = mepc;
+                                        mepc |= regs[GetRS1()];
+                                    }
+                                    else if (csr == 0x305) //mtvec
+                                    {
+                                        regs[GetRD()] = mtvec;
+                                        mtvec |= regs[GetRS1()];
+                                    }
+                                    else if (csr == 0x300) //mstatus
+                                    {
+                                        regs[GetRD()] = mstatus;
+                                        mstatus |= regs[GetRS1()];
+                                    }
+                                    else //unimplmented register
+                                    {
+                                        throw new NotImplementedException($"CSR register {csr} not implemented");
+                                    }
                                     break;
                                 }
                             case 3:
                                 {
+                                    //read csr value into rd and clear bits of csr corresponding to 1s of value of rs1
                                     Console.Write("csrrc");
+                                    UInt32 csr = GetCSR();
+                                    if (csr == 0x341) //mepc
+                                    {
+                                        regs[GetRD()] = mepc;
+                                        mepc &= ~regs[GetRS1()];
+                                    }
+                                    else if (csr == 0x305) //mtvec
+                                    {
+                                        regs[GetRD()] = mtvec;
+                                        mtvec &= ~regs[GetRS1()];
+                                    }
+                                    else if (csr == 0x300) //mstatus
+                                    {
+                                        regs[GetRD()] = mstatus;
+                                        mstatus &= ~regs[GetRS1()];
+                                    }
+                                    else //unimplmented register
+                                    {
+                                        throw new NotImplementedException($"CSR register {csr} not implemented");
+                                    }
                                     break;
                                 }
                             default:
