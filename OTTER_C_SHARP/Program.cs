@@ -44,25 +44,31 @@
         private const UInt32 STACK_ADDR = 0x10000;
         private const UInt32 MMIO_ADDR = 0x11000000;
 
+
         //external IO
         private bool RST, INTR, CLK, IOBUS_WR;
         private Int32 IOBUS_IN, IOBUS_OUT, IOBUS_ADDR;
 
         //internal components
         private UInt32 pc; //program count
-        private UInt32[] regs; //data registers - length 32 array of length 32 BitArrays
-        UInt32 ir; //array to hold instruction read from text segment file
+        private UInt32[] regs; //data registers - length 32 array of 32 bit ints
+        private UInt32 ir; //32 bit int to hold instruction read from text segment file
+        private UInt32 mtvec; //32 bit int to hold address of ISR for CSR
+        private UInt32 mepc; //32 bit int to hold return address when interrupt triggered
+        private UInt32 mstatus; //32 bit int to hold MIE and MPIE bits for enabling interrupts
 
-        FileStream text; //file for text segment of memory
-        BinaryReader textReader; //reader for text segment of memory
 
-        FileStream data; //file for data segment of memory
-        BinaryReader dataReader; //reader for data segment of memory
-        BinaryWriter dataWriter; //writer for data segment of memory
+        private FileStream text; //file for text segment of memory
+        private BinaryReader textReader; //reader for text segment of memory
+
+        private FileStream data; //file for data segment of memory
+        private BinaryReader dataReader; //reader for data segment of memory
+        private BinaryWriter dataWriter; //writer for data segment of memory
 
         public MCU()
         {
             pc = 0; //pc starts at 0
+            ir = mtvec = mepc = mstatus = 0; //initialize other vars
 
             //initialize registers
             regs = new UInt32[32];
