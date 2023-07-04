@@ -42,6 +42,7 @@
         //address constants
         private const UInt32 DATA_ADDR = 0x6000;
         private const UInt32 STACK_ADDR = 0x10000;
+        private const UInt32 MMIO_ADDR = 0x11000000;
 
         //external IO
         private bool RST, INTR, CLK, IOBUS_WR;
@@ -152,59 +153,109 @@
                 case L_OPCODE:
                     {
                         Console.Write("l");
-                        data.Seek(GenerateImmed_I()+regs[GetRS1()]-DATA_ADDR, SeekOrigin.Begin); //move data filestream to given offset
-                        UInt32 loadVal = dataReader.ReadUInt32(); //load word from data
-                        switch ((ir & FUNC3_MASK) >> 12)
+                        UInt32 offset = GenerateImmed_I() + regs[GetRS1()];
+                        if (offset<STACK_ADDR) //loading from data segment
                         {
-                            case 0:
-                                {
-                                    //mask read data to signed byte
-                                    Console.Write("b");
-                                    loadVal= loadVal & BYTE_MASK;
-                                    if ((loadVal & BYTE_SIGN_MASK)!=0)
+                            data.Seek(offset - DATA_ADDR, SeekOrigin.Begin); //move data filestream to given offset
+                            UInt32 loadVal = dataReader.ReadUInt32(); //load word from data
+                            switch ((ir & FUNC3_MASK) >> 12)
+                            {
+                                case 0:
                                     {
-                                        loadVal = loadVal | B_SIGN_SET_MASK;
+                                        //mask read data to signed byte
+                                        Console.Write("b");
+                                        loadVal = loadVal & BYTE_MASK;
+                                        if ((loadVal & BYTE_SIGN_MASK) != 0)
+                                        {
+                                            loadVal = loadVal | B_SIGN_SET_MASK;
+                                        }
+                                        break;
                                     }
-                                    break;
-                                }
-                            case 1:
-                                {
-                                    //mask read data to signed halfword
-                                    Console.Write("h");
-                                    loadVal = loadVal & HALF_MASK;
-                                    if ((loadVal & HALF_MASK) != 0)
+                                case 1:
                                     {
-                                        loadVal = loadVal | H_SIGN_SET_MASK;
+                                        //mask read data to signed halfword
+                                        Console.Write("h");
+                                        loadVal = loadVal & HALF_MASK;
+                                        if ((loadVal & HALF_MASK) != 0)
+                                        {
+                                            loadVal = loadVal | H_SIGN_SET_MASK;
+                                        }
+                                        break;
                                     }
-                                    break;
-                                }
-                            case 2:
-                                {
-                                    Console.Write("w");
-                                    break;
-                                }
-                            case 4:
-                                {
-                                    //mask read data to unsigned byte
-                                    Console.Write("bu");
-                                    loadVal = loadVal & BYTE_MASK;
-                                    break;
-                                }
-                            case 5:
-                                {
-                                    //mask read data to unsigned halfword
-                                    Console.Write("hu");
-                                    loadVal = loadVal & HALF_MASK;
-                                    break;
-                                }
-                            default:
-                                {
-                                    Console.Write("UNKNOWN");
-                                    loadVal = regs[GetRD()]; //so that value in registers doesn't change
-                                    break;
-                                }
+                                case 2:
+                                    {
+                                        Console.Write("w");
+                                        break;
+                                    }
+                                case 4:
+                                    {
+                                        //mask read data to unsigned byte
+                                        Console.Write("bu");
+                                        loadVal = loadVal & BYTE_MASK;
+                                        break;
+                                    }
+                                case 5:
+                                    {
+                                        //mask read data to unsigned halfword
+                                        Console.Write("hu");
+                                        loadVal = loadVal & HALF_MASK;
+                                        break;
+                                    }
+                                default:
+                                    {
+                                        Console.Write("UNKNOWN");
+                                        loadVal = regs[GetRD()]; //so that value in registers doesn't change
+                                        break;
+                                    }
+                            }
+                            regs[GetRD()] = loadVal; //set value of rd to loaded value
                         }
-                        regs[GetRD()] = loadVal; //set value of rd to loaded value
+                        else if(offset>=MMIO_ADDR) //loading from MMIO
+                        {
+                            switch ((ir & FUNC3_MASK) >> 12)
+                            {
+                                case 0:
+                                    {
+                                        //mask read data to signed byte
+                                        Console.Write("b");
+                                        break;
+                                    }
+                                case 1:
+                                    {
+                                        //mask read data to signed halfword
+                                        Console.Write("h");
+                                        break;
+                                    }
+                                case 2:
+                                    {
+                                        Console.Write("w");
+                                        break;
+                                    }
+                                case 4:
+                                    {
+                                        //mask read data to unsigned byte
+                                        Console.Write("bu");
+                                        break;
+                                    }
+                                case 5:
+                                    {
+                                        //mask read data to unsigned halfword
+                                        Console.Write("hu");
+                                        break;
+                                    }
+                                default:
+                                    {
+                                        Console.Write("UNKNOWN");
+                                        break;
+                                    }
+                            }
+                            Console.Write(" (MMIO)");
+                        }
+                        else //reserved memory
+                        {
+                            throw new Exception("Cannot load from reserved memory");
+                        }
+
                         Console.WriteLine(" x{0} 0x{1}(x{2})", GetRD(), Convert.ToString(GenerateImmed_I(), 16), GetRS1());
                         break;
                     }
@@ -358,35 +409,74 @@
                 case S_OPCODE:
                     {
                         Console.Write("s");
-                        data.Seek(GenerateImmed_S() + regs[GetRS1()] - DATA_ADDR, SeekOrigin.Begin); //move data filestream to given offset
-                        switch ((ir & FUNC3_MASK) >> 12)
+
+                        UInt32 offset = GenerateImmed_S() + regs[GetRS1()];
+                        if (offset<STACK_ADDR) //storing to data segment
                         {
-                            case 0:
-                                {
-                                    //store byte (8 bits) in data file
-                                    Console.Write("b");
-                                    dataWriter.Write((byte)regs[GetRS2()]);
-                                    break;
-                                }
-                            case 1:
-                                {
-                                    //store halfword (16 bits) in data file
-                                    Console.Write("h");
-                                    dataWriter.Write((UInt16)regs[GetRS2()]);
-                                    break;
-                                }
-                            case 2:
-                                {
-                                    //store word (32 bits) in data file
-                                    Console.Write("w");
-                                    dataWriter.Write(regs[GetRS2()]);
-                                    break;
-                                }
-                            default:
-                                {
-                                    Console.Write("UNKNOWN");
-                                    break;
-                                }
+                            data.Seek(offset - DATA_ADDR, SeekOrigin.Begin); //move data filestream to given offset
+                            switch ((ir & FUNC3_MASK) >> 12)
+                            {
+                                case 0:
+                                    {
+                                        //store byte (8 bits) in data file
+                                        Console.Write("b");
+                                        dataWriter.Write((byte)regs[GetRS2()]);
+                                        break;
+                                    }
+                                case 1:
+                                    {
+                                        //store halfword (16 bits) in data file
+                                        Console.Write("h");
+                                        dataWriter.Write((UInt16)regs[GetRS2()]);
+                                        break;
+                                    }
+                                case 2:
+                                    {
+                                        //store word (32 bits) in data file
+                                        Console.Write("w");
+                                        dataWriter.Write(regs[GetRS2()]);
+                                        break;
+                                    }
+                                default:
+                                    {
+                                        Console.Write("UNKNOWN");
+                                        break;
+                                    }
+                            }
+                        }
+                        else if(offset >=MMIO_ADDR) //storing to MMIO
+                        {
+                            switch ((ir & FUNC3_MASK) >> 12)
+                            {
+                                case 0:
+                                    {
+                                        //store byte (8 bits) in data file
+                                        Console.Write("b");
+                                        break;
+                                    }
+                                case 1:
+                                    {
+                                        //store halfword (16 bits) in data file
+                                        Console.Write("h");
+                                        break;
+                                    }
+                                case 2:
+                                    {
+                                        //store word (32 bits) in data file
+                                        Console.Write("w");
+                                        break;
+                                    }
+                                default:
+                                    {
+                                        Console.Write("UNKNOWN");
+                                        break;
+                                    }
+                            }
+                            Console.Write(" (MMIO)");
+                        }
+                        else //reserved memory
+                        {
+                            throw new Exception("Cannot store to reserved memory");
                         }
                         Console.WriteLine(" x{0} 0x{1}(x{2})", GetRS2(), Convert.ToString(GenerateImmed_S(), 16), GetRS1());
                         break;
