@@ -130,21 +130,21 @@
                     {
                         //write u immed to rd
                         Console.WriteLine("lui x{0} 0x{1}", GetRD(), Convert.ToString(GenerateImmed_U()>>12, 16));
-                        regs[GetRD()]=GenerateImmed_U();
+                        setRD(GenerateImmed_U());
                         break;
                     }
                 case AUIPC_OPCODE:
                     {
                         //add u immed to pc and write that to rd
                         Console.WriteLine("auipc x{0} 0x{1}", GetRD(), Convert.ToString(GenerateImmed_U()>>12, 16));
-                        regs[GetRD()]= GenerateImmed_U()+pc-4; // -4 to get pc before moving to next instruction
+                        setRD(GenerateImmed_U()+pc-4); // -4 to get pc before moving to next instruction
                         break;
                     }
                 case JAL_OPCODE:
                     {
                         //write pc+4 to rd and add j immed to pc
                         Console.WriteLine("jal x{0} 0x{1}", GetRD(), Convert.ToString(GenerateImmed_J(), 16));
-                        regs[GetRD()] = pc;
+                        setRD(pc);
                         pc += GenerateImmed_J()-4; //-4 to get pc before moving to next instruction
                         break;
                     }
@@ -152,7 +152,7 @@
                     {
                         //write pc+4 to rd and set pc to value in rs1 + i immed
                         Console.WriteLine("jalr x{0} x{1} 0x{2}", GetRD(), GetRS1(), Convert.ToString(GenerateImmed_I(), 16));
-                        regs[GetRD()] = pc;
+                        setRD(pc);
                         pc = regs[GetRS1()] + GenerateImmed_I();
                         break;
                     }
@@ -182,7 +182,7 @@
                                         //mask read data to signed halfword
                                         Console.Write("h");
                                         loadVal = loadVal & HALF_MASK;
-                                        if ((loadVal & HALF_MASK) != 0)
+                                        if ((loadVal & HALF_SIGN_MASK) != 0)
                                         {
                                             loadVal = loadVal | H_SIGN_SET_MASK;
                                         }
@@ -214,7 +214,7 @@
                                         break;
                                     }
                             }
-                            regs[GetRD()] = loadVal; //set value of rd to loaded value
+                            setRD(loadVal); //set value of rd to loaded value
                         }
                         else if(offset>=MMIO_ADDR) //loading from MMIO
                         {
@@ -273,35 +273,35 @@
                                 {
                                     //add i immed to value in rs1 and write to rd
                                     Console.Write("addi");
-                                    regs[GetRD()] = regs[GetRS1()] + GenerateImmed_I();
+                                    setRD(regs[GetRS1()] + GenerateImmed_I());
                                     break;
                                 }
                             case 1:
                                 {
                                     //logical left shift value in rs1 by 5 LSB of i immed and write to rd
                                     Console.Write("slli");
-                                    regs[GetRD()] = regs[GetRS1()] << (Int32) (GenerateImmed_I()&SHIFT_MASK);
+                                    setRD(regs[GetRS1()] << (Int32) (GenerateImmed_I()&SHIFT_MASK));
                                     break;
                                 }
                             case 2:
                                 {
                                     //write 1 to rd if value in rs1 (signed) is less than i immed (signed), 0 otherwise
                                     Console.Write("slti");
-                                    regs[GetRD()] = (Int32) regs[GetRS1()] < (Int32) GenerateImmed_I() ? 1u : 0u;
+                                    setRD((Int32) regs[GetRS1()] < (Int32) GenerateImmed_I() ? 1u : 0u);
                                     break;
                                 }
                             case 3:
                                 {
                                     //write 1 to rd if value in rs1 (unsigned) is less than i immed (unsigned), 0 otherwise
                                     Console.Write("sltiu");
-                                    regs[GetRD()] = regs[GetRS1()] < GenerateImmed_I() ? 1u : 0u;
+                                    setRD(regs[GetRS1()] < GenerateImmed_I() ? 1u : 0u);
                                     break;
                                 }
                             case 4:
                                 {
                                     //xor value in rs1 and i immed and write to rd
                                     Console.Write("xori");
-                                    regs[GetRD()]= regs[GetRS1()]^GenerateImmed_I();
+                                    setRD(regs[GetRS1()]^GenerateImmed_I());
                                     break;
                                 }
                             case 5:
@@ -310,13 +310,13 @@
                                     {
                                         //logical right shift value in rs1 by 5 LSB of i immed and write to rd
                                         Console.Write("srli");
-                                        regs[GetRD()] = regs[GetRS1()] >> (Int32)(GenerateImmed_I() & SHIFT_MASK);
+                                        setRD(regs[GetRS1()] >> (Int32)(GenerateImmed_I() & SHIFT_MASK));
                                     }
                                     else
                                     {
                                         //arithmetic right shift value in rs1 by 5 LSB of i immed and write to rd
                                         Console.Write("srai");
-                                        regs[GetRD()] = (UInt32) ((Int32) regs[GetRS1()] >> (Int32)(GenerateImmed_I() & SHIFT_MASK));
+                                        setRD((UInt32) ((Int32) regs[GetRS1()] >> (Int32)(GenerateImmed_I() & SHIFT_MASK)));
                                     }
                                     break;
                                 }
@@ -324,14 +324,14 @@
                                 {
                                     //or value in rs1 and i immed and write to rd
                                     Console.Write("ori");
-                                    regs[GetRD()] = regs[GetRS1()] | GenerateImmed_I();
+                                    setRD(regs[GetRS1()] | GenerateImmed_I());
                                     break;
                                 }
                             default: //7 - only other option
                                 {
                                     //and value in rs1 and i immed and write to rd
                                     Console.Write("andi");
-                                    regs[GetRD()] = regs[GetRS1()] & GenerateImmed_I();
+                                    setRD(regs[GetRS1()] & GenerateImmed_I());
                                     break;
                                 }
                         }
@@ -497,13 +497,13 @@
                                     {
                                         //add value in rs1 and value in rs2 and write to rd
                                         Console.Write("add");
-                                        regs[GetRD()] = regs[GetRS1()] + regs[GetRS2()];
+                                        setRD(regs[GetRS1()] + regs[GetRS2()]);
                                     }
                                     else
                                     {
                                         //subtract value in rs2 from value in rs1 and write to rd
                                         Console.Write("sub");
-                                        regs[GetRD()] = regs[GetRS1()] - regs[GetRS2()];
+                                        setRD(regs[GetRS1()] - regs[GetRS2()]);
                                     }
                                     break;
                                 }
@@ -511,28 +511,28 @@
                                 {
                                     //logical left shift value in rs1 and value in rs2 and write to rd
                                     Console.Write("sll");
-                                    regs[GetRD()] = regs[GetRS1()] << (Int32)(regs[GetRS2()] & SHIFT_MASK);
+                                    setRD(regs[GetRS1()] << (Int32)(regs[GetRS2()] & SHIFT_MASK));
                                     break;
                                 }
                             case 2:
                                 {
                                     //write 1 to rd if value in rs1 (signed) is less than value in rs2 (signed), 0 otherwise
                                     Console.Write("slt");
-                                    regs[GetRD()] = (Int32)regs[GetRS1()] < (Int32) GetRS2() ? 1u : 0u;
+                                    setRD((Int32)regs[GetRS1()] < (Int32) GetRS2() ? 1u : 0u);
                                     break;
                                 }
                             case 3:
                                 {
                                     //write 1 to rd if value in rs1 (unsigned) is less than value in rs2 (unsigned), 0 otherwise
                                     Console.Write("sltu");
-                                    regs[GetRD()] = regs[GetRS1()] < regs[GetRS2()] ? 1u : 0u;
+                                    setRD(regs[GetRS1()] < regs[GetRS2()] ? 1u : 0u);
                                     break;
                                 }
                             case 4:
                                 {
                                     //xor value in rs1 and value in rs2 and write to rd
                                     Console.Write("xor");
-                                    regs[GetRD()] = regs[GetRS1()] ^ regs[GetRS2()];
+                                    setRD(regs[GetRS1()] ^ regs[GetRS2()]);
                                     break;
                                 }
                             case 5:
@@ -541,13 +541,13 @@
                                     {
                                         //logical right shift value in rs1 and value in rs2 and write to rd
                                         Console.Write("srl");
-                                        regs[GetRD()] = regs[GetRS1()] >> (Int32) (regs[GetRS2()] & SHIFT_MASK);
+                                        setRD(regs[GetRS1()] >> (Int32) (regs[GetRS2()] & SHIFT_MASK));
                                     }
                                     else
                                     {
                                         //arithmetic right shift value in rs1 and value in rs2 and write to rd
                                         Console.Write("sra");
-                                        regs[GetRD()] = (UInt32) ((Int32) regs[GetRS1()] >> (Int32) (regs[GetRS2()] & SHIFT_MASK));
+                                        setRD((UInt32)((Int32)regs[GetRS1()] >> (Int32)(regs[GetRS2()] & SHIFT_MASK)));
                                     }
                                     break;
                                 }
@@ -555,14 +555,14 @@
                                 {
                                     //or value in rs1 and value in rs2 and write to rd
                                     Console.Write("or");
-                                    regs[GetRD()] = regs[GetRS1()] | regs[GetRS2()];
+                                    setRD(regs[GetRS1()] | regs[GetRS2()]);
                                     break;
                                 }
                             default: //7 - only other option
                                 {
                                     //and value in rs1 and value in rs2 and write to rd
                                     Console.Write("and");
-                                    regs[GetRD()] = regs[GetRS1()] & regs[GetRS2()];
+                                    setRD(regs[GetRS1()] & regs[GetRS2()]);
                                     break;
                                 }
                         }
@@ -587,17 +587,17 @@
                                     UInt32 csr = GetCSR();
                                     if(csr==0x341) //mepc
                                     {
-                                        regs[GetRD()] = mepc;
+                                        setRD(mepc);
                                         mepc = regs[GetRS1()];
                                     }
                                     else if (csr == 0x305) //mtvec
                                     {
-                                        regs[GetRD()] = mtvec;
+                                        setRD(mtvec);
                                         mtvec = regs[GetRS1()];
                                     }
                                     else if (csr == 0x300) //mstatus
                                     {
-                                        regs[GetRD()] = mstatus;
+                                        setRD(mstatus);
                                         mstatus = regs[GetRS1()];
                                     }
                                     else //unimplmented register
@@ -613,17 +613,17 @@
                                     UInt32 csr = GetCSR();
                                     if (csr == 0x341) //mepc
                                     {
-                                        regs[GetRD()] = mepc;
+                                        setRD(mepc);
                                         mepc |= regs[GetRS1()];
                                     }
                                     else if (csr == 0x305) //mtvec
                                     {
-                                        regs[GetRD()] = mtvec;
+                                        setRD(mtvec);
                                         mtvec |= regs[GetRS1()];
                                     }
                                     else if (csr == 0x300) //mstatus
                                     {
-                                        regs[GetRD()] = mstatus;
+                                        setRD(mstatus);
                                         mstatus |= regs[GetRS1()];
                                     }
                                     else //unimplmented register
@@ -639,17 +639,17 @@
                                     UInt32 csr = GetCSR();
                                     if (csr == 0x341) //mepc
                                     {
-                                        regs[GetRD()] = mepc;
+                                        setRD(mepc);
                                         mepc &= ~regs[GetRS1()];
                                     }
                                     else if (csr == 0x305) //mtvec
                                     {
-                                        regs[GetRD()] = mtvec;
+                                        setRD(mtvec);
                                         mtvec &= ~regs[GetRS1()];
                                     }
                                     else if (csr == 0x300) //mstatus
                                     {
-                                        regs[GetRD()] = mstatus;
+                                        setRD(mstatus);
                                         mstatus &= ~regs[GetRS1()];
                                     }
                                     else //unimplmented register
@@ -675,6 +675,15 @@
                         Console.WriteLine("UNKNOWN");
                         break;
                     }
+            }
+        }
+
+        private void setRD(UInt32 value)
+        {
+            UInt32 rd=GetRD();
+            if(rd>0)
+            {
+                regs[rd] = value;
             }
         }
 
