@@ -80,17 +80,19 @@
                         {
                             using(dataWriter= new BinaryWriter(data))
                             {
+                                //fill bits of data segment to 0
                                 while(data.Position<STACK_ADDR-DATA_ADDR)
                                 {
                                     dataWriter.Write(0);
                                 }
-                                data.Seek(0, SeekOrigin.Begin);
+                                data.Seek(0, SeekOrigin.Begin); //return position to beginning
 
+                                //read and execute instruction
                                 while (pc <= 0x2044)
                                 {
                                     Run();
                                 }
-                                Console.Write(Convert.ToString(pc, 16) + ": ");
+                                Console.Write(Convert.ToString(pc, 16) + ": END");
                             }
                         }
                     }
@@ -151,17 +153,17 @@
                     {
                         Console.Write("l");
                         data.Seek(GenerateImmed_I()+regs[GetRS1()]-DATA_ADDR, SeekOrigin.Begin); //move data filestream to given offset
-                        UInt32 readVal = dataReader.ReadUInt32(); //load word from data
+                        UInt32 loadVal = dataReader.ReadUInt32(); //load word from data
                         switch ((ir & FUNC3_MASK) >> 12)
                         {
                             case 0:
                                 {
                                     //mask read data to signed byte
                                     Console.Write("b");
-                                    readVal=readVal&BYTE_MASK;
-                                    if ((readVal&BYTE_SIGN_MASK)!=0)
+                                    loadVal= loadVal & BYTE_MASK;
+                                    if ((loadVal & BYTE_SIGN_MASK)!=0)
                                     {
-                                        readVal = readVal | B_SIGN_SET_MASK;
+                                        loadVal = loadVal | B_SIGN_SET_MASK;
                                     }
                                     break;
                                 }
@@ -169,10 +171,10 @@
                                 {
                                     //mask read data to signed halfword
                                     Console.Write("h");
-                                    readVal = readVal & HALF_MASK;
-                                    if ((readVal & HALF_MASK) != 0)
+                                    loadVal = loadVal & HALF_MASK;
+                                    if ((loadVal & HALF_MASK) != 0)
                                     {
-                                        readVal = readVal | H_SIGN_SET_MASK;
+                                        loadVal = loadVal | H_SIGN_SET_MASK;
                                     }
                                     break;
                                 }
@@ -185,14 +187,14 @@
                                 {
                                     //mask read data to unsigned byte
                                     Console.Write("bu");
-                                    readVal = readVal & BYTE_MASK;
+                                    loadVal = loadVal & BYTE_MASK;
                                     break;
                                 }
                             case 5:
                                 {
                                     //mask read data to unsigned halfword
                                     Console.Write("hu");
-                                    readVal = readVal & HALF_MASK;
+                                    loadVal = loadVal & HALF_MASK;
                                     break;
                                 }
                             default:
@@ -201,7 +203,7 @@
                                     break;
                                 }
                         }
-                        regs[GetRD()] = readVal; //set value of rd to loaded value
+                        regs[GetRD()] = loadVal; //set value of rd to loaded value
                         Console.WriteLine(" x{0} 0x{1}(x{2})", GetRD(), Convert.ToString(GenerateImmed_I(), 16), GetRS1());
                         break;
                     }
@@ -355,21 +357,35 @@
                 case S_OPCODE:
                     {
                         Console.Write("s");
+                        data.Seek(GenerateImmed_S() + regs[GetRS1()] - DATA_ADDR, SeekOrigin.Begin); //move data filestream to given offset
+                        UInt32 storeVal = regs[GetRS2()];
                         switch ((ir & FUNC3_MASK) >> 12)
                         {
                             case 0:
                                 {
                                     Console.Write("b");
+                                    for(int i=0; i<8; i++)
+                                    {
+                                        dataWriter.Write((storeVal&(1<<i))!=0);
+                                    }
                                     break;
                                 }
                             case 1:
                                 {
                                     Console.Write("h");
+                                    for (int i = 0; i < 16; i++)
+                                    {
+                                        dataWriter.Write((storeVal & (1 << i)) != 0);
+                                    }
                                     break;
                                 }
                             case 2:
                                 {
                                     Console.Write("w");
+                                    for (int i = 0; i < 32; i++)
+                                    {
+                                        dataWriter.Write((storeVal & (1 << i)) != 0);
+                                    }
                                     break;
                                 }
                             default:
