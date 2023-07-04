@@ -11,15 +11,21 @@
     public class MCU
     {
         //bitmask constants
-        private const UInt32 OPCODE_MASK =  0x0000007F;
-        private const UInt32 FUNC3_MASK =   0x00007000;
-        private const UInt32 U_IMMED_MASK = 0xFFFFF000;
-        private const UInt32 SHIFT_MASK =   0x0000001F;
-        private const UInt32 RD_MASK =      0x00000F80;
-        private const UInt32 RS1_MASK =     0x000F8000;
-        private const UInt32 RS2_MASK =     0x01F00000;
-        private const UInt32 MSB7_MASK =    0xFE000000;
-        private const UInt32 CSR_MASK =     0xFFF00000;
+        private const UInt32 OPCODE_MASK =      0x0000007F;
+        private const UInt32 FUNC3_MASK =       0x00007000;
+        private const UInt32 U_IMMED_MASK =     0xFFFFF000;
+        private const UInt32 SHIFT_MASK =       0x0000001F;
+        private const UInt32 RD_MASK =          0x00000F80;
+        private const UInt32 RS1_MASK =         0x000F8000;
+        private const UInt32 RS2_MASK =         0x01F00000;
+        private const UInt32 MSB7_MASK =        0xFE000000;
+        private const UInt32 CSR_MASK =         0xFFF00000;
+        private const UInt32 BYTE_MASK =        0x000000FF;
+        private const UInt32 HALF_MASK =        0x0000FFFF;
+        private const UInt32 BYTE_SIGN_MASK =   0x00000080;
+        private const UInt32 B_SIGN_SET_MASK =  0xFFFFFF00;
+        private const UInt32 HALF_SIGN_MASK =   0x00008000;
+        private const UInt32 H_SIGN_SET_MASK =  0xFFFF0000;
 
         //opcode constants
         private const byte LUI_OPCODE = 0x37;
@@ -32,6 +38,10 @@
         private const byte S_OPCODE = 0x23;
         private const byte R_OPCODE = 0x33;
         private const byte SYS_OPCODE = 0x73;
+
+        //address constants
+        private const UInt32 DATA_ADDR = 0x6000;
+        private const UInt32 STACK_ADDR = 0x10000;
 
         //external IO
         private bool RST, INTR, CLK, IOBUS_WR;
@@ -64,12 +74,18 @@
             {
                 using (textReader = new BinaryReader(text))
                 {
-                    using(data=File.Open("data.mem", FileMode.OpenOrCreate, FileAccess.ReadWrite))
+                    using(data=File.Open("data.mem", FileMode.Create, FileAccess.ReadWrite))
                     {
                         using(dataReader= new BinaryReader(data))
                         {
                             using(dataWriter= new BinaryWriter(data))
                             {
+                                while(data.Position<STACK_ADDR-DATA_ADDR)
+                                {
+                                    dataWriter.Write(0);
+                                }
+                                data.Seek(0, SeekOrigin.Begin);
+
                                 while (pc <= 0x2044)
                                 {
                                     Run();
@@ -134,16 +150,30 @@
                 case L_OPCODE:
                     {
                         Console.Write("l");
+                        data.Seek(GenerateImmed_I()+regs[GetRS1()]-DATA_ADDR, SeekOrigin.Begin); //move data filestream to given offset
+                        UInt32 readVal = dataReader.ReadUInt32(); //load word from data
                         switch ((ir & FUNC3_MASK) >> 12)
                         {
                             case 0:
                                 {
+                                    //mask read data to signed byte
                                     Console.Write("b");
+                                    readVal=readVal&BYTE_MASK;
+                                    if ((readVal&BYTE_SIGN_MASK)!=0)
+                                    {
+                                        readVal = readVal | B_SIGN_SET_MASK;
+                                    }
                                     break;
                                 }
                             case 1:
                                 {
+                                    //mask read data to signed halfword
                                     Console.Write("h");
+                                    readVal = readVal & HALF_MASK;
+                                    if ((readVal & HALF_MASK) != 0)
+                                    {
+                                        readVal = readVal | H_SIGN_SET_MASK;
+                                    }
                                     break;
                                 }
                             case 2:
@@ -153,12 +183,16 @@
                                 }
                             case 4:
                                 {
+                                    //mask read data to unsigned byte
                                     Console.Write("bu");
+                                    readVal = readVal & BYTE_MASK;
                                     break;
                                 }
                             case 5:
                                 {
+                                    //mask read data to unsigned halfword
                                     Console.Write("hu");
+                                    readVal = readVal & HALF_MASK;
                                     break;
                                 }
                             default:
@@ -167,6 +201,7 @@
                                     break;
                                 }
                         }
+                        regs[GetRD()] = readVal; //set value of rd to loaded value
                         Console.WriteLine(" x{0} 0x{1}(x{2})", GetRD(), Convert.ToString(GenerateImmed_I(), 16), GetRS1());
                         break;
                     }
