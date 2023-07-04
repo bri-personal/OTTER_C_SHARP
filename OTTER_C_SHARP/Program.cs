@@ -200,6 +200,7 @@
                             default:
                                 {
                                     Console.Write("UNKNOWN");
+                                    loadVal = regs[GetRD()]; //so that value in registers doesn't change
                                     break;
                                 }
                         }
@@ -358,34 +359,27 @@
                     {
                         Console.Write("s");
                         data.Seek(GenerateImmed_S() + regs[GetRS1()] - DATA_ADDR, SeekOrigin.Begin); //move data filestream to given offset
-                        UInt32 storeVal = regs[GetRS2()];
                         switch ((ir & FUNC3_MASK) >> 12)
                         {
                             case 0:
                                 {
+                                    //store byte (8 bits) in data file
                                     Console.Write("b");
-                                    for(int i=0; i<8; i++)
-                                    {
-                                        dataWriter.Write((storeVal&(1<<i))!=0);
-                                    }
+                                    dataWriter.Write((byte)regs[GetRS2()]);
                                     break;
                                 }
                             case 1:
                                 {
+                                    //store halfword (16 bits) in data file
                                     Console.Write("h");
-                                    for (int i = 0; i < 16; i++)
-                                    {
-                                        dataWriter.Write((storeVal & (1 << i)) != 0);
-                                    }
+                                    dataWriter.Write((UInt16)regs[GetRS2()]);
                                     break;
                                 }
                             case 2:
                                 {
+                                    //store word (32 bits) in data file
                                     Console.Write("w");
-                                    for (int i = 0; i < 32; i++)
-                                    {
-                                        dataWriter.Write((storeVal & (1 << i)) != 0);
-                                    }
+                                    dataWriter.Write(regs[GetRS2()]);
                                     break;
                                 }
                             default:
@@ -586,7 +580,7 @@
             return ir & U_IMMED_MASK;
         }
 
-        private UInt32 GenerateImmed_J() //BAD (adds 1 somehow)
+        private UInt32 GenerateImmed_J()
         {
             UInt32 imm = 0;
             for(int i=1; i<11; i++)
