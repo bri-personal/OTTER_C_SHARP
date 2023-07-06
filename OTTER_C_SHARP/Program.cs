@@ -4,11 +4,11 @@
     {
         public static void Main(string[] args)
         {
-            MCU otter = new MCU(); //create OTTER object
+            OtterMCU otter = new OtterMCU(); //create OTTER object
         }
     }
 
-    public class MCU
+    public class OtterMCU
     {
         //bitmask constants
         private const UInt32 OPCODE_MASK =      0x0000007F;
@@ -43,20 +43,23 @@
         private const UInt32 DATA_ADDR = 0x6000;
         private const UInt32 STACK_ADDR = 0x10000;
         private const UInt32 MMIO_ADDR = 0x11000000;
+        private const UInt32 SW_ADDR = MMIO_ADDR;
+        private const UInt32 LED_ADDR = MMIO_ADDR+0x20;
+        private const UInt32 SEVSEG_ADDR = MMIO_ADDR + 0x40;
 
 
         //external IO
-        private bool RST, INTR, CLK, IOBUS_WR;
-        private Int32 IOBUS_IN, IOBUS_OUT, IOBUS_ADDR;
+        public bool RST, INTR, CLK, IOBUS_WR;
+        public UInt32 IOBUS_IN, IOBUS_OUT, IOBUS_ADDR;
 
         //internal components
-        private UInt32 pc; //program count
+        public Dictionary<UInt32, UInt32> inputTable, outputTable; //MMIO addresses/values
+        public UInt32 pc; //program count
         private UInt32[] regs; //data registers - length 32 array of 32 bit ints
         private UInt32 ir; //32 bit int to hold instruction read from text segment file
         private UInt32 mtvec; //32 bit int to hold address of ISR for CSR
         private UInt32 mepc; //32 bit int to hold return address when interrupt triggered
         private UInt32 mstatus; //32 bit int to hold MIE and MPIE bits for enabling interrupts
-
 
         private FileStream text; //file for text segment of memory
         private BinaryReader textReader; //reader for text segment of memory
@@ -65,8 +68,16 @@
         private BinaryReader dataReader; //reader for data segment of memory
         private BinaryWriter dataWriter; //writer for data segment of memory
 
-        public MCU()
+        public OtterMCU()
         {
+            //initialize MMIO addresses/values
+            inputTable = new Dictionary<UInt32, UInt32>(1);
+            inputTable.Add(SW_ADDR, 0);
+
+            outputTable = new Dictionary<UInt32, UInt32>(2);
+            outputTable.Add(LED_ADDR, 0);
+            outputTable.Add(SEVSEG_ADDR, 0);
+
             pc = 0; //pc starts at 0
             ir = mtvec = mepc = mstatus = 0; //initialize other vars
 
@@ -94,7 +105,7 @@
                                 }
                                 data.Seek(0, SeekOrigin.Begin); //return position to beginning
 
-                                //read and execute instruction
+                                //read and execute instructions
                                 while (pc <= 0x2044)
                                 {
                                     Run();
@@ -160,100 +171,19 @@
                     {
                         Console.Write("l");
                         UInt32 offset = GenerateImmed_I() + regs[GetRS1()];
+                        UInt32 loadVal;
+
                         if (offset<STACK_ADDR) //loading from data segment
                         {
                             data.Seek(offset - DATA_ADDR, SeekOrigin.Begin); //move data filestream to given offset
-                            UInt32 loadVal = dataReader.ReadUInt32(); //load word from data
-                            switch ((ir & FUNC3_MASK) >> 12)
-                            {
-                                case 0:
-                                    {
-                                        //mask read data to signed byte
-                                        Console.Write("b");
-                                        loadVal = loadVal & BYTE_MASK;
-                                        if ((loadVal & BYTE_SIGN_MASK) != 0)
-                                        {
-                                            loadVal = loadVal | B_SIGN_SET_MASK;
-                                        }
-                                        break;
-                                    }
-                                case 1:
-                                    {
-                                        //mask read data to signed halfword
-                                        Console.Write("h");
-                                        loadVal = loadVal & HALF_MASK;
-                                        if ((loadVal & HALF_SIGN_MASK) != 0)
-                                        {
-                                            loadVal = loadVal | H_SIGN_SET_MASK;
-                                        }
-                                        break;
-                                    }
-                                case 2:
-                                    {
-                                        Console.Write("w");
-                                        break;
-                                    }
-                                case 4:
-                                    {
-                                        //mask read data to unsigned byte
-                                        Console.Write("bu");
-                                        loadVal = loadVal & BYTE_MASK;
-                                        break;
-                                    }
-                                case 5:
-                                    {
-                                        //mask read data to unsigned halfword
-                                        Console.Write("hu");
-                                        loadVal = loadVal & HALF_MASK;
-                                        break;
-                                    }
-                                default:
-                                    {
-                                        Console.Write("UNKNOWN");
-                                        loadVal = regs[GetRD()]; //so that value in registers doesn't change
-                                        break;
-                                    }
-                            }
-                            setRD(loadVal); //set value of rd to loaded value
+                            loadVal = dataReader.ReadUInt32(); //load word from data
                         }
                         else if(offset>=MMIO_ADDR) //loading from MMIO
                         {
-                            switch ((ir & FUNC3_MASK) >> 12)
+                            if(!inputTable.TryGetValue(offset, out loadVal)) //load word from data
                             {
-                                case 0:
-                                    {
-                                        //mask read data to signed byte
-                                        Console.Write("b");
-                                        break;
-                                    }
-                                case 1:
-                                    {
-                                        //mask read data to signed halfword
-                                        Console.Write("h");
-                                        break;
-                                    }
-                                case 2:
-                                    {
-                                        Console.Write("w");
-                                        break;
-                                    }
-                                case 4:
-                                    {
-                                        //mask read data to unsigned byte
-                                        Console.Write("bu");
-                                        break;
-                                    }
-                                case 5:
-                                    {
-                                        //mask read data to unsigned halfword
-                                        Console.Write("hu");
-                                        break;
-                                    }
-                                default:
-                                    {
-                                        Console.Write("UNKNOWN");
-                                        break;
-                                    }
+                                //unimplemented MMIO address
+                                throw new IOException($"MMIO address {offset} is not connected to an input device");
                             }
                             Console.Write(" (MMIO)");
                         }
@@ -261,6 +191,59 @@
                         {
                             throw new Exception("Cannot load from reserved memory");
                         }
+
+                        //if necessary, mask loaded data
+                        switch ((ir & FUNC3_MASK) >> 12)
+                        {
+                            case 0:
+                                {
+                                    //mask read data to signed byte
+                                    Console.Write("b");
+                                    loadVal = loadVal & BYTE_MASK;
+                                    if ((loadVal & BYTE_SIGN_MASK) != 0)
+                                    {
+                                        loadVal = loadVal | B_SIGN_SET_MASK;
+                                    }
+                                    break;
+                                }
+                            case 1:
+                                {
+                                    //mask read data to signed halfword
+                                    Console.Write("h");
+                                    loadVal = loadVal & HALF_MASK;
+                                    if ((loadVal & HALF_SIGN_MASK) != 0)
+                                    {
+                                        loadVal = loadVal | H_SIGN_SET_MASK;
+                                    }
+                                    break;
+                                }
+                            case 2:
+                                {
+                                    Console.Write("w");
+                                    break;
+                                }
+                            case 4:
+                                {
+                                    //mask read data to unsigned byte
+                                    Console.Write("bu");
+                                    loadVal = loadVal & BYTE_MASK;
+                                    break;
+                                }
+                            case 5:
+                                {
+                                    //mask read data to unsigned halfword
+                                    Console.Write("hu");
+                                    loadVal = loadVal & HALF_MASK;
+                                    break;
+                                }
+                            default:
+                                {
+                                    Console.Write("UNKNOWN");
+                                    loadVal = regs[GetRD()]; //so that value in registers doesn't change
+                                    break;
+                                }
+                        }
+                        setRD(loadVal); //set value of rd to loaded value
 
                         Console.WriteLine(" x{0} 0x{1}(x{2})", GetRD(), Convert.ToString(GenerateImmed_I(), 16), GetRS1());
                         break;
