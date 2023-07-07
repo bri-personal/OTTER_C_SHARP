@@ -2,6 +2,8 @@
 
 namespace Otter
 {
+    //FIX: jalr jumps 2 instruction ahead, storing 0 to leds every time
+
     public class Program
     {
         public static void Main(string[] args)
@@ -107,8 +109,14 @@ namespace Otter
         private BinaryReader dataReader; //reader for data segment of memory
         private BinaryWriter dataWriter; //writer for data segment of memory
 
+        public bool showInstr, debug; //flags to show verbose output or not
+
         public OtterMCU()
         {
+            //set output flags
+            showInstr = true;
+            debug = true;
+
             //initialize MMIO addresses/values
             inputTable = new Dictionary<UInt32, UInt32>(1);
             inputTable.Add(SW_ADDR, 2); //b010 for switches -> pause if test fails but not after every test
@@ -191,31 +199,56 @@ namespace Otter
                 case LUI_OPCODE:
                     {
                         //write u immed to rd
-                        Console.WriteLine("lui {0} 0x{1}", REG_NAMES[GetRD()], Convert.ToString(GenerateImmed_U()>>12, 16));
                         setRD(GenerateImmed_U());
+                        if (showInstr)
+                        {
+                            Console.WriteLine("lui {0} 0x{1}", REG_NAMES[GetRD()], Convert.ToString(GenerateImmed_U() >> 12, 16));
+                        }
+                        if (debug)
+                        {
+                            Console.WriteLine("register {0} now contains {1}", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()], 16));
+                        }
                         break;
                     }
                 case AUIPC_OPCODE:
                     {
                         //add u immed to pc and write that to rd
-                        Console.WriteLine("auipc {0} 0x{1}", REG_NAMES[GetRD()], Convert.ToString(GenerateImmed_U()>>12, 16));
                         setRD(GenerateImmed_U()+pc-4); // -4 to get pc before moving to next instruction
+                        if (debug)
+                        {
+                            Console.WriteLine("auipc {0} 0x{1}", REG_NAMES[GetRD()], Convert.ToString(GenerateImmed_U() >> 12, 16));
+                        }
+                        if (debug)
+                        {
+                            Console.WriteLine("register {0} now contains {1}", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()], 16));
+                        }
                         break;
                     }
                 case JAL_OPCODE:
                     {
                         //write pc+4 to rd and add j immed to pc
-                        Console.WriteLine("jal {0} 0x{1}", REG_NAMES[GetRD()], Convert.ToString(GenerateImmed_J(), 16));
                         setRD(pc);
                         pc += GenerateImmed_J()-4; //-4 to get pc before moving to next instruction
+                        if (showInstr)
+                        {
+                            Console.WriteLine("jal {0} 0x{1}", REG_NAMES[GetRD()], Convert.ToString(GenerateImmed_J(), 16));
+                        }
+                        if (debug)
+                        {
+                            Console.WriteLine("register {0} is now {1} and pc is now {2}", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()],16), Convert.ToString(pc, 16));
+                        }
                         break;
                     }
                 case JALR_OPCODE: //FIX: 2 instructions late
                     {
                         //write pc+4 to rd and set pc to value in rs1 + i immed
-                        Console.WriteLine("jalr {0} {1} 0x{2}", REG_NAMES[GetRD()], REG_NAMES[GetRS1()], Convert.ToString(GenerateImmed_I(), 16));
                         setRD(pc);
                         pc = regs[GetRS1()] + GenerateImmed_I();
+                        if (showInstr)
+                        {
+                            Console.WriteLine("jalr {0} {1} 0x{2}", REG_NAMES[GetRD()], REG_NAMES[GetRS1()], Convert.ToString(GenerateImmed_I(), 16));
+
+                        }
                         break;
                     }
                 case L_OPCODE:
@@ -494,6 +527,7 @@ namespace Otter
                                         if(outputTable.ContainsKey(offset))
                                         {
                                             outputTable[offset] = (byte)regs[GetRS2()];
+                                            //Console.WriteLine($"{Convert.ToString(offset,16)}: {outputTable[offset]}");
                                         }
                                         else
                                         {
@@ -509,6 +543,7 @@ namespace Otter
                                         if (outputTable.ContainsKey(offset))
                                         {
                                             outputTable[offset] = (UInt16)regs[GetRS2()];
+                                            //Console.WriteLine($"{Convert.ToString(offset, 16)}: {outputTable[offset]}");
                                         }
                                         else
                                         {
@@ -524,6 +559,7 @@ namespace Otter
                                         if (outputTable.ContainsKey(offset))
                                         {
                                             outputTable[offset] = regs[GetRS2()];
+                                            //Console.WriteLine($"{Convert.ToString(offset, 16)}: {outputTable[offset]}");
                                         }
                                         else
                                         {
