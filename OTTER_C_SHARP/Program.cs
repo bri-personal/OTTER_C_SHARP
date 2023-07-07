@@ -122,6 +122,7 @@
             }
         }
 
+        //runs through cycle for one instruction
         public void Run()
         {
             Console.Write(Convert.ToString(pc, 16) + ": ");
@@ -130,6 +131,7 @@
             ParseInstruction();
         }
 
+        //load instruction from binary mem file into ir and set pc to pc+4
         private void LoadInstruction()
         {
             text.Seek(pc, SeekOrigin.Begin);
@@ -137,6 +139,7 @@
             pc = (UInt32)text.Seek(0, SeekOrigin.Current);
         }
 
+        //parse quantities from instruction and perform operations and store result
         private void ParseInstruction()
         {
             switch (ir & OPCODE_MASK)
@@ -242,9 +245,8 @@
                                 }
                             default:
                                 {
-                                    Console.Write("UNKNOWN");
-                                    loadVal = regs[GetRD()]; //so that value in registers doesn't change
-                                    break;
+                                    //unknown func3
+                                    throw new Exception("Instruction func3 does not correspond to any known instruction");
                                 }
                         }
                         setRD(loadVal); //set value of rd to loaded value
@@ -392,8 +394,8 @@
                                 }
                             default:
                                 {
-                                    Console.Write("UNKNOWN");
-                                    break;
+                                    //unknown func3
+                                    throw new Exception("Instruction func3 does not correspond to any known instruction");
                                 }
                         }
                         Console.WriteLine(" x{0} x{1} 0x{2}", GetRS1(), GetRS2(), Convert.ToString(GenerateImmed_B(), 16));
@@ -432,8 +434,8 @@
                                     }
                                 default:
                                     {
-                                        Console.Write("UNKNOWN");
-                                        break;
+                                        //unknown func3
+                                        throw new Exception("Instruction func3 does not correspond to any known instruction");
                                     }
                             }
                         }
@@ -488,8 +490,8 @@
                                     }
                                 default:
                                     {
-                                        Console.Write("UNKNOWN");
-                                        break;
+                                        //unknown func3
+                                        throw new Exception("Instruction func3 does not correspond to any known instruction");
                                     }
                             }
                             Console.Write(" (MMIO)");
@@ -674,8 +676,8 @@
                                 }
                             default:
                                 {
-                                    Console.Write("csrUNKNOWN");
-                                    break;
+                                    //unknown func3
+                                    throw new Exception("Instruction func3 does not correspond to any known instruction");
                                 }
                         }
                         if((ir & FUNC3_MASK)!=0)
@@ -686,12 +688,13 @@
                     }
                 default:
                     {
-                        Console.WriteLine("UNKNOWN");
-                        break;
+                        //unknown opcode
+                        throw new Exception("Instruction opcode does not correspond to any known instruction");
                     }
             }
         }
 
+        //set rd to given value. ir must already contain current instruction
         private void setRD(UInt32 value)
         {
             UInt32 rd=GetRD();
@@ -701,26 +704,31 @@
             }
         }
 
+        //get destination register from instruction
         private UInt32 GetRD()
         {
             return (ir & RD_MASK) >> 7;
         }
 
+        //get source register 1 from instruction
         private UInt32 GetRS1()
         {
             return (ir & RS1_MASK) >> 15;
         }
 
+        //get source register 2 from instruction
         private UInt32 GetRS2()
         {
             return (ir & RS2_MASK) >> 20;
         }
 
+        //get CSR address from instruction
         private UInt32 GetCSR()
         {
             return (ir & CSR_MASK) >> 20;
         }
 
+        //generate I type immediate from instruction
         private UInt32 GenerateImmed_I()
         {
             UInt32 imm=0;
@@ -732,6 +740,7 @@
             return imm;
         }
 
+        //generate S type immediate from instruction
         private UInt32 GenerateImmed_S()
         {
             UInt32 imm = 0;
@@ -743,6 +752,7 @@
             return imm;
         }
 
+        //generate B type immediate from instruction
         private UInt32 GenerateImmed_B()
         {
             UInt32 imm = 0;
@@ -759,11 +769,13 @@
             return imm;
         }
 
+        //generate U type immediate from instruction
         private UInt32 GenerateImmed_U() //is already left shifted 12 bits
         {
             return ir & U_IMMED_MASK;
         }
 
+        //generate J type immediate from instruction
         private UInt32 GenerateImmed_J()
         {
             UInt32 imm = 0;
