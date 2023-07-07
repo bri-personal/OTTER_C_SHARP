@@ -2,7 +2,7 @@
 
 namespace Otter
 {
-    //FIX: jalr jumps 2 instruction ahead, storing 0 to leds every time
+    //FIX: storing 0 to leds every time
 
     public class Program
     {
@@ -206,7 +206,7 @@ namespace Otter
                         }
                         if (debug)
                         {
-                            Console.WriteLine("register {0} now contains {1}", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()], 16));
+                            Console.WriteLine("register {0} now contains 0x{1}", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()], 16));
                         }
                         break;
                     }
@@ -220,7 +220,7 @@ namespace Otter
                         }
                         if (debug)
                         {
-                            Console.WriteLine("register {0} now contains {1}", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()], 16));
+                            Console.WriteLine("register {0} now contains 0x{1}", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()], 16));
                         }
                         break;
                     }
@@ -235,22 +235,23 @@ namespace Otter
                         }
                         if (debug)
                         {
-                            Console.WriteLine("register {0} is now {1} and pc is now {2}", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()],16), Convert.ToString(pc, 16));
+                            Console.WriteLine("register {0} is now 0x{1} and pc is now 0x{2}", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()],16), Convert.ToString(pc, 16));
                         }
                         break;
                     }
-                case JALR_OPCODE: //FIX: 2 instructions late
+                case JALR_OPCODE:
                     {
                         //write pc+4 to rd and set pc to value in rs1 + i immed
-                        setRD(pc);
+                        UInt32 tmp = pc;
                         pc = regs[GetRS1()] + GenerateImmed_I();
+                        setRD(tmp);
                         if (showInstr)
                         {
                             Console.WriteLine("jalr {0} {1} 0x{2}", REG_NAMES[GetRD()], REG_NAMES[GetRS1()], Convert.ToString(GenerateImmed_I(), 16));
                         }
                         if (debug)
                         {
-                            Console.WriteLine("register {0} is now {1} and pc is now {2}", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()], 16), Convert.ToString(pc, 16));
+                            Console.WriteLine("register {0} is now 0x{1} and pc is now 0x{2}", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()], 16), Convert.ToString(pc, 16));
                         }
                         break;
                     }
