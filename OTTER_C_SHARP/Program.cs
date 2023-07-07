@@ -181,9 +181,18 @@ namespace Otter
         //runs through cycle for one instruction
         public void Run()
         {
-            Console.Write(Convert.ToString(pc, 16) + ": ");
+            if(showInstr)
+            {
+                Console.Write(Convert.ToString(pc, 16) + ": ");
+            }
+
             LoadInstruction();
-            Console.Write(Convert.ToString(ir, 16).PadLeft(8, '0')+" ");
+
+            if(showInstr)
+            {
+                Console.Write(Convert.ToString(ir, 16).PadLeft(8, '0') + " ");
+            }
+
             ParseInstruction();
         }
 
