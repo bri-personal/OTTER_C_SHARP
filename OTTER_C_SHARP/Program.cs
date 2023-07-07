@@ -1,4 +1,6 @@
-﻿namespace Otter
+﻿using System.Collections;
+
+namespace Otter
 {
     public class Program
     {
@@ -136,6 +138,8 @@
         {
             text.Seek(pc, SeekOrigin.Begin);
             ir = textReader.ReadUInt32();
+            ir = ReverseBytes(ir); //if endianness is wrong
+
             pc = (UInt32)text.Seek(0, SeekOrigin.Current);
         }
 
@@ -789,6 +793,13 @@
                 imm = imm | ( i<20 ? (ir & (1u << i)) : (ir&(1u<<31))>>(31-i) );
             }
             return imm;
+        }
+
+        // reverse byte order (32-bit)
+        public static UInt32 ReverseBytes(UInt32 value)
+        {
+            return (value & 0x000000FFU) << 24 | (value & 0x0000FF00U) << 8 |
+                   (value & 0x00FF0000U) >> 8 | (value & 0xFF000000U) >> 24;
         }
     }
 }
