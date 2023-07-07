@@ -104,6 +104,7 @@ namespace Otter
 
         private FileStream text; //file for text segment of memory
         private BinaryReader textReader; //reader for text segment of memory
+        private BinaryWriter textWriter; //writer for text segment of memory
 
         private FileStream data; //file for data segment of memory
         private BinaryReader dataReader; //reader for data segment of memory
@@ -139,34 +140,37 @@ namespace Otter
                 regs[i] = 0;
             }
 
-            using (text = File.Open("otter_memory.mem", FileMode.Open, FileAccess.Read))
+            using (text = File.Open("otter_memory.mem", FileMode.Open, FileAccess.ReadWrite))
             {
                 using (textReader = new BinaryReader(text))
                 {
-                    using(data=File.Open("data.mem", FileMode.Create, FileAccess.ReadWrite))
+                    using(textWriter=new BinaryWriter(text))
                     {
-                        using(dataReader= new BinaryReader(data))
+                        using (data = File.Open("data.mem", FileMode.Create, FileAccess.ReadWrite))
                         {
-                            using(dataWriter= new BinaryWriter(data))
+                            using (dataReader = new BinaryReader(data))
                             {
-                                //fill bits of data segment to 0
-                                while(data.Position<STACK_ADDR-DATA_ADDR)
+                                using (dataWriter = new BinaryWriter(data))
                                 {
-                                    dataWriter.Write(0);
-                                }
-                                data.Seek(0, SeekOrigin.Begin); //return position to beginning
-
-                                //read and execute instructions
-                                while (pc <= 0x3f5c)
-                                {
-                                    Run();
-                                    if(pc==0x22c)
+                                    //fill bits of data segment to 0
+                                    while (data.Position < STACK_ADDR - DATA_ADDR)
                                     {
-                                        Console.WriteLine("FAIL");
-                                        break;
+                                        dataWriter.Write(0);
                                     }
+                                    data.Seek(0, SeekOrigin.Begin); //return position to beginning
+
+                                    //read and execute instructions
+                                    while (pc <= 0x3f5c)
+                                    {
+                                        Run();
+                                        if (pc == 0x22c)
+                                        {
+                                            Console.WriteLine("FAIL");
+                                            break;
+                                        }
+                                    }
+                                    Console.Write(Convert.ToString(pc, 16) + ": END");
                                 }
-                                Console.Write(Convert.ToString(pc, 16) + ": END");
                             }
                         }
                     }
@@ -304,7 +308,11 @@ namespace Otter
                             case 0:
                                 {
                                     //mask read data to signed byte
-                                    Console.Write("b");
+                                    if (showInstr)
+                                    {
+                                        Console.Write("b");
+                                    }
+
                                     loadVal = loadVal & BYTE_MASK;
                                     if ((loadVal & BYTE_SIGN_MASK) != 0)
                                     {
@@ -315,7 +323,11 @@ namespace Otter
                             case 1:
                                 {
                                     //mask read data to signed halfword
-                                    Console.Write("h");
+                                    if (showInstr)
+                                    {
+                                        Console.Write("h");
+                                    }
+
                                     loadVal = loadVal & HALF_MASK;
                                     if ((loadVal & HALF_SIGN_MASK) != 0)
                                     {
@@ -325,20 +337,31 @@ namespace Otter
                                 }
                             case 2:
                                 {
-                                    Console.Write("w");
+                                    if (showInstr)
+                                    {
+                                        Console.Write("w");
+                                    }
                                     break;
                                 }
                             case 4:
                                 {
                                     //mask read data to unsigned byte
-                                    Console.Write("bu");
+                                    if (showInstr)
+                                    {
+                                        Console.Write("bu");
+                                    }
+
                                     loadVal = loadVal & BYTE_MASK;
                                     break;
                                 }
                             case 5:
                                 {
                                     //mask read data to unsigned halfword
-                                    Console.Write("hu");
+                                    if (showInstr)
+                                    {
+                                        Console.Write("hu");
+                                    }
+
                                     loadVal = loadVal & HALF_MASK;
                                     break;
                                 }
@@ -511,12 +534,64 @@ namespace Otter
                     }
                 case S_OPCODE:
                     {
-                        Console.Write("s");
+                        if (showInstr)
+                        {
+                            Console.Write("s");
+                        }
 
                         UInt32 offset = GenerateImmed_S() + regs[GetRS1()];
-                        if(offset<DATA_ADDR) //storing to text segment - SHOULD NOT HAPPEN
+                        UInt32 storeVal = regs[GetRS2()];
+
+                        if (offset<DATA_ADDR) //storing to text segment - SHOULD NOT HAPPEN, but possible
                         {
-                            throw new Exception($"Cannot store to address 0x{Convert.ToString(offset,16)} in text segment");
+                            text.Seek(offset, SeekOrigin.Begin); //move text filestream to given offset
+
+                            if(wrongEndian)
+                            {
+                                storeVal = ReverseBytes(storeVal); //if endianness wrong
+                            }
+
+                            switch ((ir & FUNC3_MASK) >> 12)
+                            {
+                                case 0:
+                                    {
+                                        //store byte (8 bits) in text segment file
+                                        if (showInstr)
+                                        {
+                                            Console.Write("b");
+                                        }
+
+                                        textWriter.Write((byte)storeVal);
+                                        break;
+                                    }
+                                case 1:
+                                    {
+                                        //store halfword (16 bits) in text segment file
+                                        if (showInstr)
+                                        {
+                                            Console.Write("h");
+                                        }
+
+                                        textWriter.Write((UInt16)storeVal);
+                                        break;
+                                    }
+                                case 2:
+                                    {
+                                        //store word (32 bits) in text segment file
+                                        if (showInstr)
+                                        {
+                                            Console.Write("w");
+                                        }
+
+                                        textWriter.Write(storeVal);
+                                        break;
+                                    }
+                                default:
+                                    {
+                                        //unknown func3
+                                        throw new Exception("Instruction func3 does not correspond to any known instruction");
+                                    }
+                            }
                         }
                         else if (offset<STACK_ADDR) //storing to data segment
                         {
@@ -526,22 +601,34 @@ namespace Otter
                                 case 0:
                                     {
                                         //store byte (8 bits) in data file
-                                        Console.Write("b");
-                                        dataWriter.Write((byte)regs[GetRS2()]);
+                                        if (showInstr)
+                                        {
+                                            Console.Write("b");
+                                        }
+
+                                        dataWriter.Write((byte)storeVal);
                                         break;
                                     }
                                 case 1:
                                     {
                                         //store halfword (16 bits) in data file
-                                        Console.Write("h");
-                                        dataWriter.Write((UInt16)regs[GetRS2()]);
+                                        if (showInstr)
+                                        {
+                                            Console.Write("h");
+                                        }
+
+                                        dataWriter.Write((UInt16)storeVal);
                                         break;
                                     }
                                 case 2:
                                     {
                                         //store word (32 bits) in data file
-                                        Console.Write("w");
-                                        dataWriter.Write(regs[GetRS2()]);
+                                        if (showInstr)
+                                        {
+                                            Console.Write("w");
+                                        }
+
+                                        dataWriter.Write(storeVal);
                                         break;
                                     }
                                 default:
@@ -558,10 +645,14 @@ namespace Otter
                                 case 0:
                                     {
                                         //store byte (8 bits) to MMIO
-                                        Console.Write("b");
+                                        if (showInstr)
+                                        {
+                                            Console.Write("b");
+                                        }
+
                                         if(outputTable.ContainsKey(offset))
                                         {
-                                            outputTable[offset] = (byte)regs[GetRS2()];
+                                            outputTable[offset] = (byte)storeVal;
                                             //Console.WriteLine($"{Convert.ToString(offset,16)}: {outputTable[offset]}");
                                         }
                                         else
@@ -574,10 +665,14 @@ namespace Otter
                                 case 1:
                                     {
                                         //store halfword (16 bits) to MMIO
-                                        Console.Write("h");
+                                        if (showInstr)
+                                        {
+                                            Console.Write("h");
+                                        }
+
                                         if (outputTable.ContainsKey(offset))
                                         {
-                                            outputTable[offset] = (UInt16)regs[GetRS2()];
+                                            outputTable[offset] = (UInt16)storeVal;
                                             //Console.WriteLine($"{Convert.ToString(offset, 16)}: {outputTable[offset]}");
                                         }
                                         else
@@ -590,10 +685,14 @@ namespace Otter
                                 case 2:
                                     {
                                         //store word (32 bits) to MMIO
-                                        Console.Write("w");
+                                        if (showInstr)
+                                        {
+                                            Console.Write("w");
+                                        }
+
                                         if (outputTable.ContainsKey(offset))
                                         {
-                                            outputTable[offset] = regs[GetRS2()];
+                                            outputTable[offset] = storeVal;
                                             //Console.WriteLine($"{Convert.ToString(offset, 16)}: {outputTable[offset]}");
                                         }
                                         else
@@ -614,7 +713,12 @@ namespace Otter
                         {
                             throw new Exception("Cannot store to reserved memory");
                         }
-                        Console.WriteLine(" {0} 0x{1}({2})", REG_NAMES[GetRS2()], Convert.ToString(GenerateImmed_S(), 16), REG_NAMES[GetRS1()]);
+
+                        if(showInstr)
+                        {
+                            Console.WriteLine(" {0} 0x{1}({2})", REG_NAMES[GetRS2()], Convert.ToString(GenerateImmed_S(), 16), REG_NAMES[GetRS1()]);
+                        }
+                        
                         break;
                     }
                 case R_OPCODE:
