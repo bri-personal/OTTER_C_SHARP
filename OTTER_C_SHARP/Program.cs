@@ -247,7 +247,10 @@ namespace Otter
                         if (showInstr)
                         {
                             Console.WriteLine("jalr {0} {1} 0x{2}", REG_NAMES[GetRD()], REG_NAMES[GetRS1()], Convert.ToString(GenerateImmed_I(), 16));
-
+                        }
+                        if (debug)
+                        {
+                            Console.WriteLine("register {0} is now {1} and pc is now {2}", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()], 16), Convert.ToString(pc, 16));
                         }
                         break;
                     }
