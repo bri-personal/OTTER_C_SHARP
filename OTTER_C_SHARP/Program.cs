@@ -46,6 +46,8 @@
         private const UInt32 SW_ADDR = MMIO_ADDR;
         private const UInt32 LED_ADDR = MMIO_ADDR+0x20;
         private const UInt32 SEVSEG_ADDR = MMIO_ADDR + 0x40;
+        private const UInt32 VGA_PIXEL_ADDR = MMIO_ADDR + 0x120;
+        private const UInt32 VGA_COLOR_ADDR = MMIO_ADDR + 0x140;
 
 
         //external IO
@@ -77,6 +79,8 @@
             outputTable = new Dictionary<UInt32, UInt32>(2);
             outputTable.Add(LED_ADDR, 0);
             outputTable.Add(SEVSEG_ADDR, 0);
+            outputTable.Add(VGA_PIXEL_ADDR, 0);
+            outputTable.Add(VGA_COLOR_ADDR, 0);
 
             pc = 0; //pc starts at 0
             ir = mtvec = mepc = mstatus = 0; //initialize other vars
@@ -439,20 +443,47 @@
                             {
                                 case 0:
                                     {
-                                        //store byte (8 bits) in data file
+                                        //store byte (8 bits) to MMIO
                                         Console.Write("b");
+                                        if(outputTable.ContainsKey(offset))
+                                        {
+                                            outputTable[offset] = (byte)regs[GetRS2()];
+                                        }
+                                        else
+                                        {
+                                            //unimplemented MMIO address
+                                            throw new IOException($"MMIO address {offset} is not connected to an output device");
+                                        }
                                         break;
                                     }
                                 case 1:
                                     {
-                                        //store halfword (16 bits) in data file
+                                        //store halfword (16 bits) to MMIO
                                         Console.Write("h");
+                                        if (outputTable.ContainsKey(offset))
+                                        {
+                                            outputTable[offset] = (UInt16)regs[GetRS2()];
+                                        }
+                                        else
+                                        {
+                                            //unimplemented MMIO address
+                                            throw new IOException($"MMIO address {offset} is not connected to an output device");
+                                        }
                                         break;
                                     }
                                 case 2:
                                     {
-                                        //store word (32 bits) in data file
+                                        //store word (32 bits) to MMIO
                                         Console.Write("w");
+                                        if (outputTable.ContainsKey(offset))
+                                        {
+                                            outputTable[offset] = regs[GetRS2()];
+                                        }
+                                        else
+                                        {
+                                            //unimplemented MMIO address
+                                            throw new IOException($"MMIO address {offset} is not connected to an output device");
+                                        }
                                         break;
                                     }
                                 default:
