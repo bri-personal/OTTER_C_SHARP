@@ -155,7 +155,7 @@ namespace Otter
                                 data.Seek(0, SeekOrigin.Begin); //return position to beginning
 
                                 //read and execute instructions
-                                while (pc <= 0x2044)
+                                while (pc <= 0x3f5c)
                                 {
                                     Run();
                                     if(pc==0x22c)
@@ -261,7 +261,7 @@ namespace Otter
                         UInt32 offset = GenerateImmed_I() + regs[GetRS1()];
                         UInt32 loadVal;
 
-                        if (offset<STACK_ADDR) //loading from data segment
+                        if (offset>DATA_ADDR && offset<STACK_ADDR) //loading from data segment
                         {
                             data.Seek(offset - DATA_ADDR, SeekOrigin.Begin); //move data filestream to given offset
                             loadVal = dataReader.ReadUInt32(); //load word from data
@@ -277,7 +277,7 @@ namespace Otter
                         }
                         else //reserved memory
                         {
-                            throw new Exception("Cannot load from reserved memory");
+                            throw new Exception($"Cannot load from address 0x{Convert.ToString(offset, 16)} in reserved memory");
                         }
 
                         //if necessary, mask loaded data
@@ -617,8 +617,11 @@ namespace Otter
                             case 2:
                                 {
                                     //write 1 to rd if value in rs1 (signed) is less than value in rs2 (signed), 0 otherwise
-                                    Console.Write("slt");
-                                    setRD((Int32)regs[GetRS1()] < (Int32) GetRS2() ? 1u : 0u);
+                                    setRD((Int32)regs[GetRS1()] < (Int32)regs[GetRS2()] ? 1u : 0u);
+                                    if (showInstr)
+                                    {
+                                        Console.Write("slt");
+                                    }
                                     break;
                                 }
                             case 3:
@@ -666,7 +669,16 @@ namespace Otter
                                     break;
                                 }
                         }
-                        Console.WriteLine(" {0} {1} {2}", REG_NAMES[GetRD()], REG_NAMES[GetRS1()], REG_NAMES[GetRS2()]);
+                        if(showInstr)
+                        {
+                            Console.WriteLine(" {0} {1} {2}", REG_NAMES[GetRD()], REG_NAMES[GetRS1()], REG_NAMES[GetRS2()]);
+                        }
+                        if (debug)
+                        {
+                            Console.WriteLine("rs1 {0} contains 0x{1}", REG_NAMES[GetRS1()], Convert.ToString(regs[GetRS1()], 16));
+                            Console.WriteLine("rs2 {0} contains 0x{1}", REG_NAMES[GetRS2()], Convert.ToString(regs[GetRS2()], 16));
+                            Console.WriteLine("rd {0} contains 0x{1}", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()], 16));
+                        }
                         break;
                     }
                 case SYS_OPCODE:
