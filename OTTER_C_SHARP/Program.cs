@@ -12,6 +12,40 @@ namespace Otter
 
     public class OtterMCU
     {
+        public static string[] regNames = new string[32] 
+            { "zero", 
+                "ra", 
+                "sp", 
+                "gp", 
+                "tp", 
+                "t0", 
+                "t1", 
+                "t2", 
+                "s0", 
+                "s1", 
+                "a0", 
+                "a1", 
+                "a2", 
+                "a3", 
+                "a4", 
+                "a5", 
+                "a6", 
+                "a7", 
+                "s2", 
+                "s3", 
+                "s4", 
+                "s5", 
+                "s6", 
+                "s7", 
+                "s8", 
+                "s9", 
+                "s10", 
+                "s11", 
+                "t3", 
+                "t4", 
+                "t5", 
+                "t6" };
+
         //bitmask constants
         private const UInt32 OPCODE_MASK =      0x0000007F;
         private const UInt32 FUNC3_MASK =       0x00007000;
@@ -76,7 +110,7 @@ namespace Otter
         {
             //initialize MMIO addresses/values
             inputTable = new Dictionary<UInt32, UInt32>(1);
-            inputTable.Add(SW_ADDR, 0);
+            inputTable.Add(SW_ADDR, 2); //b010 for switches -> pause if test fails but not after every test
 
             outputTable = new Dictionary<UInt32, UInt32>(2);
             outputTable.Add(LED_ADDR, 0);
@@ -115,6 +149,11 @@ namespace Otter
                                 while (pc <= 0x2044)
                                 {
                                     Run();
+                                    if(pc==0x22c)
+                                    {
+                                        Console.WriteLine("FAIL");
+                                        break;
+                                    }
                                 }
                                 Console.Write(Convert.ToString(pc, 16) + ": END");
                             }
@@ -151,29 +190,29 @@ namespace Otter
                 case LUI_OPCODE:
                     {
                         //write u immed to rd
-                        Console.WriteLine("lui x{0} 0x{1}", GetRD(), Convert.ToString(GenerateImmed_U()>>12, 16));
+                        Console.WriteLine("lui {0} 0x{1}", regNames[GetRD()], Convert.ToString(GenerateImmed_U()>>12, 16));
                         setRD(GenerateImmed_U());
                         break;
                     }
                 case AUIPC_OPCODE:
                     {
                         //add u immed to pc and write that to rd
-                        Console.WriteLine("auipc x{0} 0x{1}", GetRD(), Convert.ToString(GenerateImmed_U()>>12, 16));
+                        Console.WriteLine("auipc {0} 0x{1}", regNames[GetRD()], Convert.ToString(GenerateImmed_U()>>12, 16));
                         setRD(GenerateImmed_U()+pc-4); // -4 to get pc before moving to next instruction
                         break;
                     }
                 case JAL_OPCODE:
                     {
                         //write pc+4 to rd and add j immed to pc
-                        Console.WriteLine("jal x{0} 0x{1}", GetRD(), Convert.ToString(GenerateImmed_J(), 16));
+                        Console.WriteLine("jal {0} 0x{1}", regNames[GetRD()], Convert.ToString(GenerateImmed_J(), 16));
                         setRD(pc);
                         pc += GenerateImmed_J()-4; //-4 to get pc before moving to next instruction
                         break;
                     }
-                case JALR_OPCODE:
+                case JALR_OPCODE: //FIX: 2 instructions late
                     {
                         //write pc+4 to rd and set pc to value in rs1 + i immed
-                        Console.WriteLine("jalr x{0} x{1} 0x{2}", GetRD(), GetRS1(), Convert.ToString(GenerateImmed_I(), 16));
+                        Console.WriteLine("jalr {0} {1} 0x{2}", regNames[GetRD()], regNames[GetRS1()], Convert.ToString(GenerateImmed_I(), 16));
                         setRD(pc);
                         pc = regs[GetRS1()] + GenerateImmed_I();
                         break;
@@ -255,7 +294,7 @@ namespace Otter
                         }
                         setRD(loadVal); //set value of rd to loaded value
 
-                        Console.WriteLine(" x{0} 0x{1}(x{2})", GetRD(), Convert.ToString(GenerateImmed_I(), 16), GetRS1());
+                        Console.WriteLine(" {0} 0x{1}({2})", regNames[GetRD()], Convert.ToString(GenerateImmed_I(), 16), regNames[GetRS1()]);
                         break;
                     }
                 case I_OPCODE:
@@ -328,7 +367,7 @@ namespace Otter
                                     break;
                                 }
                         }
-                        Console.WriteLine(" x{0} x{1} 0x{2}", GetRD(), GetRS1(), Convert.ToString(GenerateImmed_I(), 16));
+                        Console.WriteLine(" {0} {1} 0x{2}", regNames[GetRD()], regNames[GetRS1()], Convert.ToString(GenerateImmed_I(), 16));
                         break;
                     }
                 case B_OPCODE:
@@ -402,7 +441,7 @@ namespace Otter
                                     throw new Exception("Instruction func3 does not correspond to any known instruction");
                                 }
                         }
-                        Console.WriteLine(" x{0} x{1} 0x{2}", GetRS1(), GetRS2(), Convert.ToString(GenerateImmed_B(), 16));
+                        Console.WriteLine(" {0} {1} 0x{2}", regNames[GetRS1()], regNames[GetRS2()], Convert.ToString(GenerateImmed_B(), 16));
                         break;
                     }
                 case S_OPCODE:
@@ -504,7 +543,7 @@ namespace Otter
                         {
                             throw new Exception("Cannot store to reserved memory");
                         }
-                        Console.WriteLine(" x{0} 0x{1}(x{2})", GetRS2(), Convert.ToString(GenerateImmed_S(), 16), GetRS1());
+                        Console.WriteLine(" {0} 0x{1}({2})", regNames[GetRS2()], Convert.ToString(GenerateImmed_S(), 16), regNames[GetRS1()]);
                         break;
                     }
                 case R_OPCODE:
@@ -586,7 +625,7 @@ namespace Otter
                                     break;
                                 }
                         }
-                        Console.WriteLine(" x{0} x{1} x{2}", GetRD(), GetRS1(), GetRS2());
+                        Console.WriteLine(" {0} {1} {2}", regNames[GetRD()], regNames[GetRS1()], regNames[GetRS2()]);
                         break;
                     }
                 case SYS_OPCODE:
@@ -686,7 +725,7 @@ namespace Otter
                         }
                         if((ir & FUNC3_MASK)!=0)
                         {
-                            Console.WriteLine(" x{0} 0x{1} x{2}", GetRD(), Convert.ToString(GetCSR(), 16), GetRS1());
+                            Console.WriteLine(" {0} 0x{1} {2}", regNames[GetRD()], Convert.ToString(GetCSR(), 16), regNames[GetRS1()]);
                         }
                         break;
                     }
@@ -796,7 +835,7 @@ namespace Otter
         }
 
         // reverse byte order (32-bit)
-        public static UInt32 ReverseBytes(UInt32 value)
+        private static UInt32 ReverseBytes(UInt32 value)
         {
             return (value & 0x000000FFU) << 24 | (value & 0x0000FF00U) << 8 |
                    (value & 0x00FF0000U) >> 8 | (value & 0xFF000000U) >> 24;
