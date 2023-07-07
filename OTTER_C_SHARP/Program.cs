@@ -261,7 +261,12 @@ namespace Otter
                         UInt32 offset = GenerateImmed_I() + regs[GetRS1()];
                         UInt32 loadVal;
 
-                        if (offset>DATA_ADDR && offset<STACK_ADDR) //loading from data segment
+                        if(offset<DATA_ADDR) //loading from text segment - good assembly program shouldn't do this but it is possible
+                        {
+                            text.Seek(offset, SeekOrigin.Begin); //move text filestream to given offset
+                            loadVal = textReader.ReadUInt32(); //load word from text
+                        }
+                        else if (offset<STACK_ADDR) //loading from data segment
                         {
                             data.Seek(offset - DATA_ADDR, SeekOrigin.Begin); //move data filestream to given offset
                             loadVal = dataReader.ReadUInt32(); //load word from data
@@ -487,7 +492,11 @@ namespace Otter
                         Console.Write("s");
 
                         UInt32 offset = GenerateImmed_S() + regs[GetRS1()];
-                        if (offset<STACK_ADDR) //storing to data segment
+                        if(offset<DATA_ADDR) //storing to text segment - SHOULD NOT HAPPEN
+                        {
+                            throw new Exception($"Cannot store to address 0x{Convert.ToString(offset,16)} in text segment");
+                        }
+                        else if (offset<STACK_ADDR) //storing to data segment
                         {
                             data.Seek(offset - DATA_ADDR, SeekOrigin.Begin); //move data filestream to given offset
                             switch ((ir & FUNC3_MASK) >> 12)
@@ -575,7 +584,7 @@ namespace Otter
                                 default:
                                     {
                                         //unknown func3
-                                        throw new Exception("Instruction func3 does not correspond to any known instruction");
+                                        throw new Exception($"Cannot store to address 0x{Convert.ToString(offset, 16)} in reserved memory");
                                     }
                             }
                             Console.Write(" (MMIO)");
