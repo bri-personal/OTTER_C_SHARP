@@ -110,12 +110,14 @@ namespace Otter
         private BinaryWriter dataWriter; //writer for data segment of memory
 
         public bool showInstr, debug; //flags to show verbose output or not
+        public bool wrongEndian; //flag to reverse bytes when loading from text segment
 
         public OtterMCU()
         {
             //set output flags
             showInstr = true;
             debug = true;
+            wrongEndian = true;
 
             //initialize MMIO addresses/values
             inputTable = new Dictionary<UInt32, UInt32>(1);
@@ -186,8 +188,11 @@ namespace Otter
         {
             text.Seek(pc, SeekOrigin.Begin);
             ir = textReader.ReadUInt32();
-            ir = ReverseBytes(ir); //if endianness is wrong
-
+            if(wrongEndian)
+            {
+                ir = ReverseBytes(ir); //if endianness is wrong
+            }
+            
             pc = (UInt32)text.Seek(0, SeekOrigin.Current);
         }
 
@@ -257,7 +262,11 @@ namespace Otter
                     }
                 case L_OPCODE:
                     {
-                        Console.Write("l");
+                        if(showInstr)
+                        {
+                            Console.Write("l");
+                        }
+
                         UInt32 offset = GenerateImmed_I() + regs[GetRS1()];
                         UInt32 loadVal;
 
@@ -265,6 +274,11 @@ namespace Otter
                         {
                             text.Seek(offset, SeekOrigin.Begin); //move text filestream to given offset
                             loadVal = textReader.ReadUInt32(); //load word from text
+
+                            if(wrongEndian)
+                            {
+                                loadVal = ReverseBytes(loadVal); //if endianness is wrong
+                            }
                         }
                         else if (offset<STACK_ADDR) //loading from data segment
                         {
@@ -278,7 +292,6 @@ namespace Otter
                                 //unimplemented MMIO address
                                 throw new IOException($"MMIO address {offset} is not connected to an input device");
                             }
-                            Console.Write(" (MMIO)");
                         }
                         else //reserved memory
                         {
@@ -337,7 +350,16 @@ namespace Otter
                         }
                         setRD(loadVal); //set value of rd to loaded value
 
-                        Console.WriteLine(" {0} 0x{1}({2})", REG_NAMES[GetRD()], Convert.ToString(GenerateImmed_I(), 16), REG_NAMES[GetRS1()]);
+                        if(showInstr)
+                        {
+                            Console.WriteLine(" {0} 0x{1}({2})", REG_NAMES[GetRD()], Convert.ToString(GenerateImmed_I(), 16), REG_NAMES[GetRS1()]);
+                        }
+                        if(debug)
+                        {
+                            Console.WriteLine("loaded from address {0}", Convert.ToString(offset, 16));
+                            Console.WriteLine("rd {0} contains 0x{1}", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()], 16));
+                        }
+                        
                         break;
                     }
                 case I_OPCODE:
@@ -587,7 +609,6 @@ namespace Otter
                                         throw new Exception($"Cannot store to address 0x{Convert.ToString(offset, 16)} in reserved memory");
                                     }
                             }
-                            Console.Write(" (MMIO)");
                         }
                         else //reserved memory
                         {
