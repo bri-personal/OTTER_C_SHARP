@@ -201,6 +201,7 @@ namespace Otter
         {
             text.Seek(pc, SeekOrigin.Begin);
             ir = textReader.ReadUInt32();
+
             if(wrongEndian)
             {
                 ir = ReverseBytes(ir); //if endianness is wrong
@@ -218,6 +219,7 @@ namespace Otter
                     {
                         //write u immed to rd
                         setRD(GenerateImmed_U());
+
                         if (showInstr)
                         {
                             Console.WriteLine("lui {0} 0x{1}", REG_NAMES[GetRD()], Convert.ToString(GenerateImmed_U() >> 12, 16));
@@ -226,12 +228,14 @@ namespace Otter
                         {
                             Console.WriteLine("register {0} now contains 0x{1}", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()], 16));
                         }
+
                         break;
                     }
                 case AUIPC_OPCODE:
                     {
                         //add u immed to pc and write that to rd
                         setRD(GenerateImmed_U()+pc-4); // -4 to get pc before moving to next instruction
+
                         if (debug)
                         {
                             Console.WriteLine("auipc {0} 0x{1}", REG_NAMES[GetRD()], Convert.ToString(GenerateImmed_U() >> 12, 16));
@@ -240,6 +244,7 @@ namespace Otter
                         {
                             Console.WriteLine("register {0} now contains 0x{1}", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()], 16));
                         }
+
                         break;
                     }
                 case JAL_OPCODE:
@@ -247,6 +252,7 @@ namespace Otter
                         //write pc+4 to rd and add j immed to pc
                         setRD(pc);
                         pc += GenerateImmed_J()-4; //-4 to get pc before moving to next instruction
+                        
                         if (showInstr)
                         {
                             Console.WriteLine("jal {0} 0x{1}", REG_NAMES[GetRD()], Convert.ToString(GenerateImmed_J(), 16));
@@ -255,6 +261,7 @@ namespace Otter
                         {
                             Console.WriteLine("register {0} is now 0x{1} and pc is now 0x{2}", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()],16), Convert.ToString(pc, 16));
                         }
+
                         break;
                     }
                 case JALR_OPCODE:
@@ -263,6 +270,7 @@ namespace Otter
                         UInt32 tmp = pc;
                         pc = regs[GetRS1()] + GenerateImmed_I();
                         setRD(tmp);
+
                         if (showInstr)
                         {
                             Console.WriteLine("jalr {0} {1} 0x{2}", REG_NAMES[GetRD()], REG_NAMES[GetRS1()], Convert.ToString(GenerateImmed_I(), 16));
@@ -271,6 +279,7 @@ namespace Otter
                         {
                             Console.WriteLine("register {0} is now 0x{1} and pc is now 0x{2}", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()], 16), Convert.ToString(pc, 16));
                         }
+
                         break;
                     }
                 case L_OPCODE:
