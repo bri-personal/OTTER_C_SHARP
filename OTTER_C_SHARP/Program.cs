@@ -8,45 +8,45 @@ namespace Otter
     {
         public static void Main(string[] args)
         {
-            OtterMCU otter = new OtterMCU(); //create OTTER object
+            OtterMCU otter = new OtterMCU(true, true, true); //create OTTER object
         }
     }
 
     public class OtterMCU
     {
         //specific register names array matches indices to names
-        public static string[] REG_NAMES = new string[32] 
-            { "zero", 
-                "ra", 
-                "sp", 
-                "gp", 
-                "tp", 
-                "t0", 
-                "t1", 
-                "t2", 
-                "s0", 
-                "s1", 
-                "a0", 
-                "a1", 
-                "a2", 
-                "a3", 
-                "a4", 
-                "a5", 
-                "a6", 
-                "a7", 
-                "s2", 
-                "s3", 
-                "s4", 
-                "s5", 
-                "s6", 
-                "s7", 
-                "s8", 
-                "s9", 
-                "s10", 
-                "s11", 
-                "t3", 
-                "t4", 
-                "t5", 
+        public static string[] REG_NAMES = new string[32]
+            { "zero",
+                "ra",
+                "sp",
+                "gp",
+                "tp",
+                "t0",
+                "t1",
+                "t2",
+                "s0",
+                "s1",
+                "a0",
+                "a1",
+                "a2",
+                "a3",
+                "a4",
+                "a5",
+                "a6",
+                "a7",
+                "s2",
+                "s3",
+                "s4",
+                "s5",
+                "s6",
+                "s7",
+                "s8",
+                "s9",
+                "s10",
+                "s11",
+                "t3",
+                "t4",
+                "t5",
                 "t6" };
 
         //bitmask constants
@@ -83,7 +83,7 @@ namespace Otter
         private const UInt32 STACK_ADDR = 0x10000;
         private const UInt32 MMIO_ADDR = 0x11000000;
         private const UInt32 SW_ADDR = MMIO_ADDR;
-        private const UInt32 LED_ADDR = MMIO_ADDR+0x20;
+        private const UInt32 LED_ADDR = MMIO_ADDR + 0x20;
         private const UInt32 SEVSEG_ADDR = MMIO_ADDR + 0x40;
         private const UInt32 VGA_PIXEL_ADDR = MMIO_ADDR + 0x120;
         private const UInt32 VGA_COLOR_ADDR = MMIO_ADDR + 0x140;
@@ -113,22 +113,26 @@ namespace Otter
         public bool showInstr, debug; //flags to show verbose output or not
         public bool wrongEndian; //flag to reverse bytes when loading from text segment
 
-        public OtterMCU()
+        public OtterMCU(bool showInstr, bool debug, bool wrongEndian)
         {
             //set output flags
-            showInstr = true;
-            debug = true;
-            wrongEndian = true;
+            this.showInstr = showInstr;
+            this.debug = debug;
+            this.wrongEndian = wrongEndian;
 
             //initialize MMIO addresses/values
-            inputTable = new Dictionary<UInt32, UInt32>(1);
-            inputTable.Add(SW_ADDR, 2); //b010 for switches -> pause if test fails but not after every test
+            inputTable = new Dictionary<UInt32, UInt32>(1)
+            {
+                { SW_ADDR, 2 } //b010 for switches -> pause if test fails but not after every test
+            };
 
-            outputTable = new Dictionary<UInt32, UInt32>(2);
-            outputTable.Add(LED_ADDR, 0);
-            outputTable.Add(SEVSEG_ADDR, 0);
-            outputTable.Add(VGA_PIXEL_ADDR, 0);
-            outputTable.Add(VGA_COLOR_ADDR, 0);
+            outputTable = new Dictionary<UInt32, UInt32>(2)
+            {
+                { LED_ADDR, 0 },
+                { SEVSEG_ADDR, 0 },
+                { VGA_PIXEL_ADDR, 0 },
+                { VGA_COLOR_ADDR, 0 }
+            };
 
             pc = 0; //pc starts at 0
             ir = mtvec = mepc = mstatus = 0; //initialize other vars
@@ -144,7 +148,7 @@ namespace Otter
             {
                 using (textReader = new BinaryReader(text))
                 {
-                    using(textWriter=new BinaryWriter(text))
+                    using (textWriter = new BinaryWriter(text))
                     {
                         using (data = File.Open("data.mem", FileMode.Create, FileAccess.ReadWrite))
                         {
@@ -181,14 +185,14 @@ namespace Otter
         //runs through cycle for one instruction
         public void Run()
         {
-            if(showInstr)
+            if (showInstr)
             {
                 Console.Write(Convert.ToString(pc, 16) + ": ");
             }
 
             LoadInstruction();
 
-            if(showInstr)
+            if (showInstr)
             {
                 Console.Write(Convert.ToString(ir, 16).PadLeft(8, '0') + " ");
             }
@@ -202,11 +206,11 @@ namespace Otter
             text.Seek(pc, SeekOrigin.Begin);
             ir = textReader.ReadUInt32();
 
-            if(wrongEndian)
+            if (wrongEndian)
             {
                 ir = ReverseBytes(ir); //if endianness is wrong
             }
-            
+
             pc = (UInt32)text.Seek(0, SeekOrigin.Current);
         }
 
@@ -234,7 +238,7 @@ namespace Otter
                 case AUIPC_OPCODE:
                     {
                         //add u immed to pc and write that to rd
-                        setRD(GenerateImmed_U()+pc-4); // -4 to get pc before moving to next instruction
+                        setRD(GenerateImmed_U() + pc - 4); // -4 to get pc before moving to next instruction
 
                         if (showInstr || debug)
                         {
@@ -251,15 +255,15 @@ namespace Otter
                     {
                         //write pc+4 to rd and add j immed to pc
                         setRD(pc);
-                        pc += GenerateImmed_J()-4; //-4 to get pc before moving to next instruction
-                        
+                        pc += GenerateImmed_J() - 4; //-4 to get pc before moving to next instruction
+
                         if (showInstr || debug)
                         {
                             Console.WriteLine("jal {0} 0x{1}", REG_NAMES[GetRD()], Convert.ToString(GenerateImmed_J(), 16));
                         }
                         if (debug)
                         {
-                            Console.WriteLine("rd {0} contains 0x{1}", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()],16));
+                            Console.WriteLine("rd {0} contains 0x{1}", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()], 16));
                             Console.WriteLine("pc is now 0x{0}\n", Convert.ToString(pc, 16));
                         }
 
@@ -287,32 +291,27 @@ namespace Otter
                     }
                 case L_OPCODE:
                     {
-                        if(showInstr || debug)
-                        {
-                            Console.Write("l");
-                        }
-
                         UInt32 offset = GenerateImmed_I() + regs[GetRS1()];
                         UInt32 loadVal;
 
-                        if(offset<DATA_ADDR) //loading from text segment - good assembly program shouldn't do this but it is possible
+                        if (offset < DATA_ADDR) //loading from text segment - good assembly program shouldn't do this but it is possible
                         {
                             text.Seek(offset, SeekOrigin.Begin); //move text filestream to given offset
                             loadVal = textReader.ReadUInt32(); //load word from text
 
-                            if(wrongEndian)
+                            if (wrongEndian)
                             {
                                 loadVal = ReverseBytes(loadVal); //if endianness is wrong
                             }
                         }
-                        else if (offset<STACK_ADDR) //loading from data segment
+                        else if (offset < STACK_ADDR) //loading from data segment
                         {
                             data.Seek(offset - DATA_ADDR, SeekOrigin.Begin); //move data filestream to given offset
                             loadVal = dataReader.ReadUInt32(); //load word from data
                         }
-                        else if(offset>=MMIO_ADDR) //loading from MMIO
+                        else if (offset >= MMIO_ADDR) //loading from MMIO
                         {
-                            if(!inputTable.TryGetValue(offset, out loadVal)) //load word from data
+                            if (!inputTable.TryGetValue(offset, out loadVal)) //load word from data
                             {
                                 //unimplemented MMIO address
                                 throw new IOException($"MMIO address {offset} is not connected to an input device");
@@ -331,7 +330,7 @@ namespace Otter
                                     //mask read data to signed byte
                                     if (showInstr || debug)
                                     {
-                                        Console.Write("b");
+                                        Console.Write("lb");
                                     }
 
                                     loadVal = loadVal & BYTE_MASK;
@@ -346,7 +345,7 @@ namespace Otter
                                     //mask read data to signed halfword
                                     if (showInstr || debug)
                                     {
-                                        Console.Write("h");
+                                        Console.Write("lh");
                                     }
 
                                     loadVal = loadVal & HALF_MASK;
@@ -360,7 +359,7 @@ namespace Otter
                                 {
                                     if (showInstr || debug)
                                     {
-                                        Console.Write("w");
+                                        Console.Write("lw");
                                     }
                                     break;
                                 }
@@ -369,7 +368,7 @@ namespace Otter
                                     //mask read data to unsigned byte
                                     if (showInstr || debug)
                                     {
-                                        Console.Write("bu");
+                                        Console.Write("lbu");
                                     }
 
                                     loadVal = loadVal & BYTE_MASK;
@@ -380,7 +379,7 @@ namespace Otter
                                     //mask read data to unsigned halfword
                                     if (showInstr || debug)
                                     {
-                                        Console.Write("hu");
+                                        Console.Write("lhu");
                                     }
 
                                     loadVal = loadVal & HALF_MASK;
@@ -394,16 +393,16 @@ namespace Otter
                         }
                         setRD(loadVal); //set value of rd to loaded value
 
-                        if(showInstr || debug)
+                        if (showInstr || debug)
                         {
                             Console.WriteLine(" {0} 0x{1}({2})", REG_NAMES[GetRD()], Convert.ToString(GenerateImmed_I(), 16), REG_NAMES[GetRS1()]);
                         }
-                        if(debug)
+                        if (debug)
                         {
-                            Console.WriteLine("loaded from address {0}", Convert.ToString(offset, 16));
+                            Console.WriteLine("loaded from address 0x{0}", Convert.ToString(offset, 16));
                             Console.WriteLine("rd {0} contains 0x{1}\n", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()], 16));
                         }
-                        
+
                         break;
                     }
                 case I_OPCODE:
@@ -427,7 +426,7 @@ namespace Otter
                                     {
                                         Console.Write("slli");
                                     }
-                                    setRD(regs[GetRS1()] << (Int32) (GenerateImmed_I()&SHIFT_MASK));
+                                    setRD(regs[GetRS1()] << (Int32)(GenerateImmed_I() & SHIFT_MASK));
                                     break;
                                 }
                             case 2:
@@ -437,7 +436,7 @@ namespace Otter
                                     {
                                         Console.Write("slti");
                                     }
-                                    setRD((Int32) regs[GetRS1()] < (Int32) GenerateImmed_I() ? 1u : 0u);
+                                    setRD((Int32)regs[GetRS1()] < (Int32)GenerateImmed_I() ? 1u : 0u);
                                     break;
                                 }
                             case 3:
@@ -457,7 +456,7 @@ namespace Otter
                                     {
                                         Console.Write("xori");
                                     }
-                                    setRD(regs[GetRS1()]^GenerateImmed_I());
+                                    setRD(regs[GetRS1()] ^ GenerateImmed_I());
                                     break;
                                 }
                             case 5:
@@ -478,7 +477,7 @@ namespace Otter
                                         {
                                             Console.Write("srai");
                                         }
-                                        setRD((UInt32) ((Int32) regs[GetRS1()] >> (Int32)(GenerateImmed_I() & SHIFT_MASK)));
+                                        setRD((UInt32)((Int32)regs[GetRS1()] >> (Int32)(GenerateImmed_I() & SHIFT_MASK)));
                                     }
                                     break;
                                 }
@@ -508,9 +507,9 @@ namespace Otter
                         {
                             Console.WriteLine(" {0} {1} 0x{2}", REG_NAMES[GetRD()], REG_NAMES[GetRS1()], Convert.ToString(GenerateImmed_I(), 16));
                         }
-                        if(debug)
+                        if (debug)
                         {
-                            Console.WriteLine("rs1 {0} contains 0x{1}", REG_NAMES[GetRS1()], Convert.ToString(regs[GetRS1()],16));
+                            Console.WriteLine("rs1 {0} contains 0x{1}", REG_NAMES[GetRS1()], Convert.ToString(regs[GetRS1()], 16));
                             Console.WriteLine("rd {0} contains 0x{1}\n", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()], 16));
                         }
 
@@ -518,19 +517,14 @@ namespace Otter
                     }
                 case B_OPCODE:
                     {
-                        if (showInstr || debug)
-                        {
-                            Console.Write("b");
-                        }
-
-                        switch((ir&FUNC3_MASK)>>12)
+                        switch ((ir & FUNC3_MASK) >> 12)
                         {
                             case 0:
                                 {
                                     //add b immed to pc if values in rs1 and rs2 are equal
                                     if (showInstr || debug)
                                     {
-                                        Console.Write("eq");
+                                        Console.Write("beq");
                                     }
 
                                     if (regs[GetRS1()] == regs[GetRS2()])
@@ -544,7 +538,7 @@ namespace Otter
                                     //add b immed to pc if values in rs1 and rs2 are not equal
                                     if (showInstr || debug)
                                     {
-                                        Console.Write("ne");
+                                        Console.Write("bne");
                                     }
 
                                     if (regs[GetRS1()] != regs[GetRS2()])
@@ -558,7 +552,7 @@ namespace Otter
                                     //add b immed to pc if value in rs1 is less than that in rs2
                                     if (showInstr || debug)
                                     {
-                                        Console.Write("lt");
+                                        Console.Write("blt");
                                     }
 
                                     if ((Int32)regs[GetRS1()] < (Int32)regs[GetRS2()])
@@ -572,10 +566,10 @@ namespace Otter
                                     //add b immed to pc if value in rs1 is greater than or equal that in rs2
                                     if (showInstr || debug)
                                     {
-                                        Console.Write("ge");
+                                        Console.Write("bge");
                                     }
 
-                                    if ((Int32) regs[GetRS1()] >= (Int32) regs[GetRS2()])
+                                    if ((Int32)regs[GetRS1()] >= (Int32)regs[GetRS2()])
                                     {
                                         pc += GenerateImmed_B() - 4; //-4 to get pc before moving to next instruction
                                     }
@@ -586,7 +580,7 @@ namespace Otter
                                     //add b immed to pc if value in rs1 is less than that in rs2 (unsigned)
                                     if (showInstr || debug)
                                     {
-                                        Console.Write("ltu");
+                                        Console.Write("bltu");
                                     }
 
                                     if (regs[GetRS1()] < regs[GetRS2()])
@@ -600,7 +594,7 @@ namespace Otter
                                     //add b immed to pc if value in rs1 is greater than or equal that in rs2 (unsigned)
                                     if (showInstr || debug)
                                     {
-                                        Console.Write("geu");
+                                        Console.Write("bgeu");
                                     }
 
                                     if (regs[GetRS1()] >= regs[GetRS2()])
@@ -620,7 +614,7 @@ namespace Otter
                         {
                             Console.WriteLine(" {0} {1} 0x{2}", REG_NAMES[GetRS1()], REG_NAMES[GetRS2()], Convert.ToString(GenerateImmed_B(), 16));
                         }
-                        if(debug)
+                        if (debug)
                         {
                             Console.WriteLine("rs1 {0} contains 0x{1}", REG_NAMES[GetRS1()], Convert.ToString(regs[GetRS1()], 16));
                             Console.WriteLine("rs2 {0} contains 0x{1}", REG_NAMES[GetRS2()], Convert.ToString(regs[GetRS2()], 16));
@@ -631,19 +625,14 @@ namespace Otter
                     }
                 case S_OPCODE:
                     {
-                        if (showInstr || debug)
-                        {
-                            Console.Write("s");
-                        }
-
                         UInt32 offset = GenerateImmed_S() + regs[GetRS1()];
                         UInt32 storeVal = regs[GetRS2()];
 
-                        if (offset<DATA_ADDR) //storing to text segment - SHOULD NOT HAPPEN, but possible
+                        if (offset < DATA_ADDR) //storing to text segment - SHOULD NOT HAPPEN, but possible
                         {
                             text.Seek(offset, SeekOrigin.Begin); //move text filestream to given offset
 
-                            if(wrongEndian)
+                            if (wrongEndian)
                             {
                                 storeVal = ReverseBytes(storeVal); //if endianness wrong
                             }
@@ -655,7 +644,7 @@ namespace Otter
                                         //store byte (8 bits) in text segment file
                                         if (showInstr || debug)
                                         {
-                                            Console.Write("b");
+                                            Console.Write("sb");
                                         }
 
                                         textWriter.Write((byte)storeVal);
@@ -666,7 +655,7 @@ namespace Otter
                                         //store halfword (16 bits) in text segment file
                                         if (showInstr || debug)
                                         {
-                                            Console.Write("h");
+                                            Console.Write("sh");
                                         }
 
                                         textWriter.Write((UInt16)storeVal);
@@ -677,7 +666,7 @@ namespace Otter
                                         //store word (32 bits) in text segment file
                                         if (showInstr || debug)
                                         {
-                                            Console.Write("w");
+                                            Console.Write("sw");
                                         }
 
                                         textWriter.Write(storeVal);
@@ -690,7 +679,7 @@ namespace Otter
                                     }
                             }
                         }
-                        else if (offset<STACK_ADDR) //storing to data segment
+                        else if (offset < STACK_ADDR) //storing to data segment
                         {
                             data.Seek(offset - DATA_ADDR, SeekOrigin.Begin); //move data filestream to given offset
                             switch ((ir & FUNC3_MASK) >> 12)
@@ -700,7 +689,7 @@ namespace Otter
                                         //store byte (8 bits) in data file
                                         if (showInstr || debug)
                                         {
-                                            Console.Write("b");
+                                            Console.Write("sb");
                                         }
 
                                         dataWriter.Write((byte)storeVal);
@@ -711,7 +700,7 @@ namespace Otter
                                         //store halfword (16 bits) in data file
                                         if (showInstr || debug)
                                         {
-                                            Console.Write("h");
+                                            Console.Write("sh");
                                         }
 
                                         dataWriter.Write((UInt16)storeVal);
@@ -722,7 +711,7 @@ namespace Otter
                                         //store word (32 bits) in data file
                                         if (showInstr || debug)
                                         {
-                                            Console.Write("w");
+                                            Console.Write("sw");
                                         }
 
                                         dataWriter.Write(storeVal);
@@ -735,7 +724,7 @@ namespace Otter
                                     }
                             }
                         }
-                        else if(offset >=MMIO_ADDR) //storing to MMIO
+                        else if (offset >= MMIO_ADDR) //storing to MMIO
                         {
                             switch ((ir & FUNC3_MASK) >> 12)
                             {
@@ -744,10 +733,10 @@ namespace Otter
                                         //store byte (8 bits) to MMIO
                                         if (showInstr || debug)
                                         {
-                                            Console.Write("b");
+                                            Console.Write("sb");
                                         }
 
-                                        if(outputTable.ContainsKey(offset))
+                                        if (outputTable.ContainsKey(offset))
                                         {
                                             outputTable[offset] = (byte)storeVal;
                                             //Console.WriteLine($"{Convert.ToString(offset,16)}: {outputTable[offset]}");
@@ -764,7 +753,7 @@ namespace Otter
                                         //store halfword (16 bits) to MMIO
                                         if (showInstr || debug)
                                         {
-                                            Console.Write("h");
+                                            Console.Write("sh");
                                         }
 
                                         if (outputTable.ContainsKey(offset))
@@ -784,7 +773,7 @@ namespace Otter
                                         //store word (32 bits) to MMIO
                                         if (showInstr || debug)
                                         {
-                                            Console.Write("w");
+                                            Console.Write("sw");
                                         }
 
                                         if (outputTable.ContainsKey(offset))
@@ -811,16 +800,16 @@ namespace Otter
                             throw new Exception("Cannot store to reserved memory");
                         }
 
-                        if(showInstr || debug)
+                        if (showInstr || debug)
                         {
                             Console.WriteLine(" {0} 0x{1}({2})", REG_NAMES[GetRS2()], Convert.ToString(GenerateImmed_S(), 16), REG_NAMES[GetRS1()]);
                         }
-                        if(debug)
+                        if (debug)
                         {
                             Console.WriteLine("stored to address 0x{0}", Convert.ToString(offset, 16));
                             Console.WriteLine("rs2 {0} contains 0x{1}\n", REG_NAMES[GetRS2()], Convert.ToString(regs[GetRS2()], 16));
                         }
-                        
+
                         break;
                     }
                 case R_OPCODE:
@@ -829,7 +818,7 @@ namespace Otter
                         {
                             case 0:
                                 {
-                                    if((ir&MSB7_MASK)==0)
+                                    if ((ir & MSB7_MASK) == 0)
                                     {
                                         //add value in rs1 and value in rs2 and write to rd
                                         if (showInstr || debug)
@@ -905,7 +894,7 @@ namespace Otter
                                             Console.Write("srl");
                                         }
 
-                                        setRD(regs[GetRS1()] >> (Int32) (regs[GetRS2()] & SHIFT_MASK));
+                                        setRD(regs[GetRS1()] >> (Int32)(regs[GetRS2()] & SHIFT_MASK));
                                     }
                                     else
                                     {
@@ -965,7 +954,7 @@ namespace Otter
                                     {
                                         Console.WriteLine("mret");
                                     }
-                                    if(debug)
+                                    if (debug)
                                     {
                                         Console.WriteLine("mtvec contains 0x{0}", Convert.ToString(mepc, 16));
                                         Console.WriteLine("pc is now 0x{0}", Convert.ToString(pc, 16));
@@ -983,7 +972,7 @@ namespace Otter
                                     }
 
                                     UInt32 csr = GetCSR();
-                                    if(csr==0x341) //mepc
+                                    if (csr == 0x341) //mepc
                                     {
                                         setRD(mepc);
                                         mepc = regs[GetRS1()];
@@ -1070,13 +1059,13 @@ namespace Otter
                                     throw new Exception("Instruction func3 does not correspond to any known instruction");
                                 }
                         }
-                        if((ir & FUNC3_MASK)!=0)
+                        if ((ir & FUNC3_MASK) != 0)
                         {
                             if (showInstr || debug)
                             {
                                 Console.WriteLine(" {0} 0x{1} {2}", REG_NAMES[GetRD()], Convert.ToString(GetCSR(), 16), REG_NAMES[GetRS1()]);
                             }
-                            if(debug)
+                            if (debug)
                             {
                                 Console.WriteLine("rs1 {0} contains 0x{1}", REG_NAMES[GetRS1()], Convert.ToString(regs[GetRS1()], 16));
                                 Console.WriteLine("rd {0} contains 0x{1}", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()], 16));
@@ -1098,8 +1087,8 @@ namespace Otter
         //set rd to given value. ir must already contain current instruction
         private void setRD(UInt32 value)
         {
-            UInt32 rd=GetRD();
-            if(rd>0)
+            UInt32 rd = GetRD();
+            if (rd > 0)
             {
                 regs[rd] = value;
             }
@@ -1132,10 +1121,10 @@ namespace Otter
         //generate I type immediate from instruction
         private UInt32 GenerateImmed_I()
         {
-            UInt32 imm=0;
-            for(int i=0; i<32; i++)
+            UInt32 imm = 0;
+            for (int i = 0; i < 32; i++)
             {
-                imm= imm | ( i<11 ? (ir & (1u<<(i+20)))>>20 : (ir& (1u<<31))>>(31-i));
+                imm = imm | (i < 11 ? (ir & (1u << (i + 20))) >> 20 : (ir & (1u << 31)) >> (31 - i));
             }
 
             return imm;
@@ -1161,8 +1150,8 @@ namespace Otter
             {
                 imm = imm | (i < 5 ? (ir & (1u << (i + 7))) >> 7 : (ir & (1u << (i + 20))) >> 20);
             }
-            imm = imm | (ir & (1<<7))<<4;
-            for(int i=12; i<32; i++)
+            imm = imm | (ir & (1 << 7)) << 4;
+            for (int i = 12; i < 32; i++)
             {
                 imm = imm | ((ir & (1u << 31)) >> (31 - i));
             }
@@ -1180,14 +1169,14 @@ namespace Otter
         private UInt32 GenerateImmed_J()
         {
             UInt32 imm = 0;
-            for(int i=1; i<11; i++)
+            for (int i = 1; i < 11; i++)
             {
-                imm = imm | ((ir & (1u<<(i+20)))>>20);
+                imm = imm | ((ir & (1u << (i + 20))) >> 20);
             }
-            imm = imm | ((ir & (1 << 20))>>9);
+            imm = imm | ((ir & (1 << 20)) >> 9);
             for (int i = 12; i < 32; i++)
             {
-                imm = imm | ( i<20 ? (ir & (1u << i)) : (ir&(1u<<31))>>(31-i) );
+                imm = imm | (i < 20 ? (ir & (1u << i)) : (ir & (1u << 31)) >> (31 - i));
             }
             return imm;
         }
