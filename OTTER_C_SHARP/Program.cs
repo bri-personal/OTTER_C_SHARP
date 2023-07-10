@@ -220,13 +220,13 @@ namespace Otter
                         //write u immed to rd
                         setRD(GenerateImmed_U());
 
-                        if (showInstr)
+                        if (showInstr || debug)
                         {
                             Console.WriteLine("lui {0} 0x{1}", REG_NAMES[GetRD()], Convert.ToString(GenerateImmed_U() >> 12, 16));
                         }
                         if (debug)
                         {
-                            Console.WriteLine("register {0} now contains 0x{1}", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()], 16));
+                            Console.WriteLine("rd {0} contains 0x{1}\n", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()], 16));
                         }
 
                         break;
@@ -236,13 +236,13 @@ namespace Otter
                         //add u immed to pc and write that to rd
                         setRD(GenerateImmed_U()+pc-4); // -4 to get pc before moving to next instruction
 
-                        if (debug)
+                        if (showInstr || debug)
                         {
                             Console.WriteLine("auipc {0} 0x{1}", REG_NAMES[GetRD()], Convert.ToString(GenerateImmed_U() >> 12, 16));
                         }
                         if (debug)
                         {
-                            Console.WriteLine("register {0} now contains 0x{1}", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()], 16));
+                            Console.WriteLine("rd {0} contains 0x{1}\n", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()], 16));
                         }
 
                         break;
@@ -253,13 +253,14 @@ namespace Otter
                         setRD(pc);
                         pc += GenerateImmed_J()-4; //-4 to get pc before moving to next instruction
                         
-                        if (showInstr)
+                        if (showInstr || debug)
                         {
                             Console.WriteLine("jal {0} 0x{1}", REG_NAMES[GetRD()], Convert.ToString(GenerateImmed_J(), 16));
                         }
                         if (debug)
                         {
-                            Console.WriteLine("register {0} is now 0x{1} and pc is now 0x{2}", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()],16), Convert.ToString(pc, 16));
+                            Console.WriteLine("rd {0} contains 0x{1}", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()],16));
+                            Console.WriteLine("pc is now 0x{0}\n", Convert.ToString(pc, 16));
                         }
 
                         break;
@@ -271,20 +272,22 @@ namespace Otter
                         pc = regs[GetRS1()] + GenerateImmed_I();
                         setRD(tmp);
 
-                        if (showInstr)
+                        if (showInstr || debug)
                         {
                             Console.WriteLine("jalr {0} {1} 0x{2}", REG_NAMES[GetRD()], REG_NAMES[GetRS1()], Convert.ToString(GenerateImmed_I(), 16));
                         }
                         if (debug)
                         {
-                            Console.WriteLine("register {0} is now 0x{1} and pc is now 0x{2}", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()], 16), Convert.ToString(pc, 16));
+                            Console.WriteLine("rs1 {0} contains 0x{1}", REG_NAMES[GetRS1()], Convert.ToString(regs[GetRS1()], 16));
+                            Console.WriteLine("rd {0} is now 0x{1}", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()], 16));
+                            Console.WriteLine("pc is now 0x{0}\n", Convert.ToString(pc, 16));
                         }
 
                         break;
                     }
                 case L_OPCODE:
                     {
-                        if(showInstr)
+                        if(showInstr || debug)
                         {
                             Console.Write("l");
                         }
@@ -326,7 +329,7 @@ namespace Otter
                             case 0:
                                 {
                                     //mask read data to signed byte
-                                    if (showInstr)
+                                    if (showInstr || debug)
                                     {
                                         Console.Write("b");
                                     }
@@ -341,7 +344,7 @@ namespace Otter
                             case 1:
                                 {
                                     //mask read data to signed halfword
-                                    if (showInstr)
+                                    if (showInstr || debug)
                                     {
                                         Console.Write("h");
                                     }
@@ -355,7 +358,7 @@ namespace Otter
                                 }
                             case 2:
                                 {
-                                    if (showInstr)
+                                    if (showInstr || debug)
                                     {
                                         Console.Write("w");
                                     }
@@ -364,7 +367,7 @@ namespace Otter
                             case 4:
                                 {
                                     //mask read data to unsigned byte
-                                    if (showInstr)
+                                    if (showInstr || debug)
                                     {
                                         Console.Write("bu");
                                     }
@@ -375,7 +378,7 @@ namespace Otter
                             case 5:
                                 {
                                     //mask read data to unsigned halfword
-                                    if (showInstr)
+                                    if (showInstr || debug)
                                     {
                                         Console.Write("hu");
                                     }
@@ -391,14 +394,14 @@ namespace Otter
                         }
                         setRD(loadVal); //set value of rd to loaded value
 
-                        if(showInstr)
+                        if(showInstr || debug)
                         {
                             Console.WriteLine(" {0} 0x{1}({2})", REG_NAMES[GetRD()], Convert.ToString(GenerateImmed_I(), 16), REG_NAMES[GetRS1()]);
                         }
                         if(debug)
                         {
                             Console.WriteLine("loaded from address {0}", Convert.ToString(offset, 16));
-                            Console.WriteLine("rd {0} contains 0x{1}", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()], 16));
+                            Console.WriteLine("rd {0} contains 0x{1}\n", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()], 16));
                         }
                         
                         break;
@@ -410,35 +413,50 @@ namespace Otter
                             case 0:
                                 {
                                     //add i immed to value in rs1 and write to rd
-                                    Console.Write("addi");
+                                    if (showInstr || debug)
+                                    {
+                                        Console.Write("addi");
+                                    }
                                     setRD(regs[GetRS1()] + GenerateImmed_I());
                                     break;
                                 }
                             case 1:
                                 {
                                     //logical left shift value in rs1 by 5 LSB of i immed and write to rd
-                                    Console.Write("slli");
+                                    if (showInstr || debug)
+                                    {
+                                        Console.Write("slli");
+                                    }
                                     setRD(regs[GetRS1()] << (Int32) (GenerateImmed_I()&SHIFT_MASK));
                                     break;
                                 }
                             case 2:
                                 {
                                     //write 1 to rd if value in rs1 (signed) is less than i immed (signed), 0 otherwise
-                                    Console.Write("slti");
+                                    if (showInstr || debug)
+                                    {
+                                        Console.Write("slti");
+                                    }
                                     setRD((Int32) regs[GetRS1()] < (Int32) GenerateImmed_I() ? 1u : 0u);
                                     break;
                                 }
                             case 3:
                                 {
                                     //write 1 to rd if value in rs1 (unsigned) is less than i immed (unsigned), 0 otherwise
-                                    Console.Write("sltiu");
+                                    if (showInstr || debug)
+                                    {
+                                        Console.Write("sltiu");
+                                    }
                                     setRD(regs[GetRS1()] < GenerateImmed_I() ? 1u : 0u);
                                     break;
                                 }
                             case 4:
                                 {
                                     //xor value in rs1 and i immed and write to rd
-                                    Console.Write("xori");
+                                    if (showInstr || debug)
+                                    {
+                                        Console.Write("xori");
+                                    }
                                     setRD(regs[GetRS1()]^GenerateImmed_I());
                                     break;
                                 }
@@ -447,13 +465,19 @@ namespace Otter
                                     if ((ir & MSB7_MASK) == 0)
                                     {
                                         //logical right shift value in rs1 by 5 LSB of i immed and write to rd
-                                        Console.Write("srli");
+                                        if (showInstr || debug)
+                                        {
+                                            Console.Write("srli");
+                                        }
                                         setRD(regs[GetRS1()] >> (Int32)(GenerateImmed_I() & SHIFT_MASK));
                                     }
                                     else
                                     {
                                         //arithmetic right shift value in rs1 by 5 LSB of i immed and write to rd
-                                        Console.Write("srai");
+                                        if (showInstr || debug)
+                                        {
+                                            Console.Write("srai");
+                                        }
                                         setRD((UInt32) ((Int32) regs[GetRS1()] >> (Int32)(GenerateImmed_I() & SHIFT_MASK)));
                                     }
                                     break;
@@ -461,30 +485,54 @@ namespace Otter
                             case 6:
                                 {
                                     //or value in rs1 and i immed and write to rd
-                                    Console.Write("ori");
+                                    if (showInstr || debug)
+                                    {
+                                        Console.Write("ori");
+                                    }
                                     setRD(regs[GetRS1()] | GenerateImmed_I());
                                     break;
                                 }
                             default: //7 - only other option
                                 {
                                     //and value in rs1 and i immed and write to rd
-                                    Console.Write("andi");
+                                    if (showInstr || debug)
+                                    {
+                                        Console.Write("andi");
+                                    }
                                     setRD(regs[GetRS1()] & GenerateImmed_I());
                                     break;
                                 }
                         }
-                        Console.WriteLine(" {0} {1} 0x{2}", REG_NAMES[GetRD()], REG_NAMES[GetRS1()], Convert.ToString(GenerateImmed_I(), 16));
+
+                        if (showInstr || debug)
+                        {
+                            Console.WriteLine(" {0} {1} 0x{2}", REG_NAMES[GetRD()], REG_NAMES[GetRS1()], Convert.ToString(GenerateImmed_I(), 16));
+                        }
+                        if(debug)
+                        {
+                            Console.WriteLine("rs1 {0} contains 0x{1}", REG_NAMES[GetRS1()], Convert.ToString(regs[GetRS1()],16));
+                            Console.WriteLine("rd {0} contains 0x{1}\n", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()], 16));
+                        }
+
                         break;
                     }
                 case B_OPCODE:
                     {
-                        Console.Write("b");
+                        if (showInstr || debug)
+                        {
+                            Console.Write("b");
+                        }
+
                         switch((ir&FUNC3_MASK)>>12)
                         {
                             case 0:
                                 {
                                     //add b immed to pc if values in rs1 and rs2 are equal
-                                    Console.Write("eq");
+                                    if (showInstr || debug)
+                                    {
+                                        Console.Write("eq");
+                                    }
+
                                     if (regs[GetRS1()] == regs[GetRS2()])
                                     {
                                         pc += GenerateImmed_B() - 4; //-4 to get pc before moving to next instruction
@@ -494,7 +542,11 @@ namespace Otter
                             case 1:
                                 {
                                     //add b immed to pc if values in rs1 and rs2 are not equal
-                                    Console.Write("ne");
+                                    if (showInstr || debug)
+                                    {
+                                        Console.Write("ne");
+                                    }
+
                                     if (regs[GetRS1()] != regs[GetRS2()])
                                     {
                                         pc += GenerateImmed_B() - 4; //-4 to get pc before moving to next instruction
@@ -504,7 +556,11 @@ namespace Otter
                             case 4:
                                 {
                                     //add b immed to pc if value in rs1 is less than that in rs2
-                                    Console.Write("lt");
+                                    if (showInstr || debug)
+                                    {
+                                        Console.Write("lt");
+                                    }
+
                                     if ((Int32)regs[GetRS1()] < (Int32)regs[GetRS2()])
                                     {
                                         pc += GenerateImmed_B() - 4; //-4 to get pc before moving to next instruction
@@ -514,7 +570,11 @@ namespace Otter
                             case 5:
                                 {
                                     //add b immed to pc if value in rs1 is greater than or equal that in rs2
-                                    Console.Write("ge");
+                                    if (showInstr || debug)
+                                    {
+                                        Console.Write("ge");
+                                    }
+
                                     if ((Int32) regs[GetRS1()] >= (Int32) regs[GetRS2()])
                                     {
                                         pc += GenerateImmed_B() - 4; //-4 to get pc before moving to next instruction
@@ -524,7 +584,11 @@ namespace Otter
                             case 6:
                                 {
                                     //add b immed to pc if value in rs1 is less than that in rs2 (unsigned)
-                                    Console.Write("ltu");
+                                    if (showInstr || debug)
+                                    {
+                                        Console.Write("ltu");
+                                    }
+
                                     if (regs[GetRS1()] < regs[GetRS2()])
                                     {
                                         pc += GenerateImmed_B() - 4; //-4 to get pc before moving to next instruction
@@ -534,7 +598,11 @@ namespace Otter
                             case 7:
                                 {
                                     //add b immed to pc if value in rs1 is greater than or equal that in rs2 (unsigned)
-                                    Console.Write("geu");
+                                    if (showInstr || debug)
+                                    {
+                                        Console.Write("geu");
+                                    }
+
                                     if (regs[GetRS1()] >= regs[GetRS2()])
                                     {
                                         pc += GenerateImmed_B() - 4; //-4 to get pc before moving to next instruction
@@ -547,12 +615,23 @@ namespace Otter
                                     throw new Exception("Instruction func3 does not correspond to any known instruction");
                                 }
                         }
-                        Console.WriteLine(" {0} {1} 0x{2}", REG_NAMES[GetRS1()], REG_NAMES[GetRS2()], Convert.ToString(GenerateImmed_B(), 16));
+
+                        if (showInstr || debug)
+                        {
+                            Console.WriteLine(" {0} {1} 0x{2}", REG_NAMES[GetRS1()], REG_NAMES[GetRS2()], Convert.ToString(GenerateImmed_B(), 16));
+                        }
+                        if(debug)
+                        {
+                            Console.WriteLine("rs1 {0} contains 0x{1}", REG_NAMES[GetRS1()], Convert.ToString(regs[GetRS1()], 16));
+                            Console.WriteLine("rs2 {0} contains 0x{1}", REG_NAMES[GetRS2()], Convert.ToString(regs[GetRS2()], 16));
+                            Console.WriteLine("pc is now 0x{0}\n", Convert.ToString(pc, 16));
+                        }
+
                         break;
                     }
                 case S_OPCODE:
                     {
-                        if (showInstr)
+                        if (showInstr || debug)
                         {
                             Console.Write("s");
                         }
@@ -574,7 +653,7 @@ namespace Otter
                                 case 0:
                                     {
                                         //store byte (8 bits) in text segment file
-                                        if (showInstr)
+                                        if (showInstr || debug)
                                         {
                                             Console.Write("b");
                                         }
@@ -585,7 +664,7 @@ namespace Otter
                                 case 1:
                                     {
                                         //store halfword (16 bits) in text segment file
-                                        if (showInstr)
+                                        if (showInstr || debug)
                                         {
                                             Console.Write("h");
                                         }
@@ -596,7 +675,7 @@ namespace Otter
                                 case 2:
                                     {
                                         //store word (32 bits) in text segment file
-                                        if (showInstr)
+                                        if (showInstr || debug)
                                         {
                                             Console.Write("w");
                                         }
@@ -619,7 +698,7 @@ namespace Otter
                                 case 0:
                                     {
                                         //store byte (8 bits) in data file
-                                        if (showInstr)
+                                        if (showInstr || debug)
                                         {
                                             Console.Write("b");
                                         }
@@ -630,7 +709,7 @@ namespace Otter
                                 case 1:
                                     {
                                         //store halfword (16 bits) in data file
-                                        if (showInstr)
+                                        if (showInstr || debug)
                                         {
                                             Console.Write("h");
                                         }
@@ -641,7 +720,7 @@ namespace Otter
                                 case 2:
                                     {
                                         //store word (32 bits) in data file
-                                        if (showInstr)
+                                        if (showInstr || debug)
                                         {
                                             Console.Write("w");
                                         }
@@ -663,7 +742,7 @@ namespace Otter
                                 case 0:
                                     {
                                         //store byte (8 bits) to MMIO
-                                        if (showInstr)
+                                        if (showInstr || debug)
                                         {
                                             Console.Write("b");
                                         }
@@ -683,7 +762,7 @@ namespace Otter
                                 case 1:
                                     {
                                         //store halfword (16 bits) to MMIO
-                                        if (showInstr)
+                                        if (showInstr || debug)
                                         {
                                             Console.Write("h");
                                         }
@@ -703,7 +782,7 @@ namespace Otter
                                 case 2:
                                     {
                                         //store word (32 bits) to MMIO
-                                        if (showInstr)
+                                        if (showInstr || debug)
                                         {
                                             Console.Write("w");
                                         }
@@ -732,9 +811,14 @@ namespace Otter
                             throw new Exception("Cannot store to reserved memory");
                         }
 
-                        if(showInstr)
+                        if(showInstr || debug)
                         {
                             Console.WriteLine(" {0} 0x{1}({2})", REG_NAMES[GetRS2()], Convert.ToString(GenerateImmed_S(), 16), REG_NAMES[GetRS1()]);
+                        }
+                        if(debug)
+                        {
+                            Console.WriteLine("stored to address 0x{0}", Convert.ToString(offset, 16));
+                            Console.WriteLine("rs2 {0} contains 0x{1}\n", REG_NAMES[GetRS2()], Convert.ToString(regs[GetRS2()], 16));
                         }
                         
                         break;
@@ -748,13 +832,21 @@ namespace Otter
                                     if((ir&MSB7_MASK)==0)
                                     {
                                         //add value in rs1 and value in rs2 and write to rd
-                                        Console.Write("add");
+                                        if (showInstr || debug)
+                                        {
+                                            Console.Write("add");
+                                        }
+
                                         setRD(regs[GetRS1()] + regs[GetRS2()]);
                                     }
                                     else
                                     {
                                         //subtract value in rs2 from value in rs1 and write to rd
-                                        Console.Write("sub");
+                                        if (showInstr || debug)
+                                        {
+                                            Console.Write("sub");
+                                        }
+
                                         setRD(regs[GetRS1()] - regs[GetRS2()]);
                                     }
                                     break;
@@ -762,31 +854,44 @@ namespace Otter
                             case 1:
                                 {
                                     //logical left shift value in rs1 and value in rs2 and write to rd
-                                    Console.Write("sll");
+                                    if (showInstr || debug)
+                                    {
+                                        Console.Write("sll");
+                                    }
+
                                     setRD(regs[GetRS1()] << (Int32)(regs[GetRS2()] & SHIFT_MASK));
                                     break;
                                 }
                             case 2:
                                 {
                                     //write 1 to rd if value in rs1 (signed) is less than value in rs2 (signed), 0 otherwise
-                                    setRD((Int32)regs[GetRS1()] < (Int32)regs[GetRS2()] ? 1u : 0u);
-                                    if (showInstr)
+                                    if (showInstr || debug)
                                     {
                                         Console.Write("slt");
                                     }
+
+                                    setRD((Int32)regs[GetRS1()] < (Int32)regs[GetRS2()] ? 1u : 0u);
                                     break;
                                 }
                             case 3:
                                 {
                                     //write 1 to rd if value in rs1 (unsigned) is less than value in rs2 (unsigned), 0 otherwise
-                                    Console.Write("sltu");
+                                    if (showInstr || debug)
+                                    {
+                                        Console.Write("sltu");
+                                    }
+
                                     setRD(regs[GetRS1()] < regs[GetRS2()] ? 1u : 0u);
                                     break;
                                 }
                             case 4:
                                 {
                                     //xor value in rs1 and value in rs2 and write to rd
-                                    Console.Write("xor");
+                                    if (showInstr || debug)
+                                    {
+                                        Console.Write("xor");
+                                    }
+
                                     setRD(regs[GetRS1()] ^ regs[GetRS2()]);
                                     break;
                                 }
@@ -795,13 +900,21 @@ namespace Otter
                                     if ((ir & MSB7_MASK) == 0)
                                     {
                                         //logical right shift value in rs1 and value in rs2 and write to rd
-                                        Console.Write("srl");
+                                        if (showInstr || debug)
+                                        {
+                                            Console.Write("srl");
+                                        }
+
                                         setRD(regs[GetRS1()] >> (Int32) (regs[GetRS2()] & SHIFT_MASK));
                                     }
                                     else
                                     {
                                         //arithmetic right shift value in rs1 and value in rs2 and write to rd
-                                        Console.Write("sra");
+                                        if (showInstr || debug)
+                                        {
+                                            Console.Write("sra");
+                                        }
+
                                         setRD((UInt32)((Int32)regs[GetRS1()] >> (Int32)(regs[GetRS2()] & SHIFT_MASK)));
                                     }
                                     break;
@@ -809,19 +922,27 @@ namespace Otter
                             case 6:
                                 {
                                     //or value in rs1 and value in rs2 and write to rd
-                                    Console.Write("or");
+                                    if (showInstr || debug)
+                                    {
+                                        Console.Write("or");
+                                    }
+
                                     setRD(regs[GetRS1()] | regs[GetRS2()]);
                                     break;
                                 }
                             default: //7 - only other option
                                 {
                                     //and value in rs1 and value in rs2 and write to rd
-                                    Console.Write("and");
+                                    if (showInstr || debug)
+                                    {
+                                        Console.Write("and");
+                                    }
+
                                     setRD(regs[GetRS1()] & regs[GetRS2()]);
                                     break;
                                 }
                         }
-                        if(showInstr)
+                        if (showInstr || debug)
                         {
                             Console.WriteLine(" {0} {1} {2}", REG_NAMES[GetRD()], REG_NAMES[GetRS1()], REG_NAMES[GetRS2()]);
                         }
@@ -829,7 +950,7 @@ namespace Otter
                         {
                             Console.WriteLine("rs1 {0} contains 0x{1}", REG_NAMES[GetRS1()], Convert.ToString(regs[GetRS1()], 16));
                             Console.WriteLine("rs2 {0} contains 0x{1}", REG_NAMES[GetRS2()], Convert.ToString(regs[GetRS2()], 16));
-                            Console.WriteLine("rd {0} contains 0x{1}", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()], 16));
+                            Console.WriteLine("rd {0} contains 0x{1}\n", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()], 16));
                         }
                         break;
                     }
@@ -840,14 +961,27 @@ namespace Otter
                             case 0:
                                 {
                                     //return execution to where it left off before interrupt, addr given by mepc
-                                    Console.WriteLine("mret");
+                                    if (showInstr || debug)
+                                    {
+                                        Console.WriteLine("mret");
+                                    }
+                                    if(debug)
+                                    {
+                                        Console.WriteLine("mtvec contains 0x{0}", Convert.ToString(mepc, 16));
+                                        Console.WriteLine("pc is now 0x{0}", Convert.ToString(pc, 16));
+                                    }
+
                                     pc = mepc;
                                     break;
                                 }
                             case 1:
                                 {
                                     //read csr value into rd and write value of rs1 into csr
-                                    Console.Write("csrrw");
+                                    if (showInstr || debug)
+                                    {
+                                        Console.Write("csrrw");
+                                    }
+
                                     UInt32 csr = GetCSR();
                                     if(csr==0x341) //mepc
                                     {
@@ -873,7 +1007,11 @@ namespace Otter
                             case 2:
                                 {
                                     //read csr value into rd and set bits of csr corresponding to 1s of value of rs1
-                                    Console.Write("csrrs");
+                                    if (showInstr || debug)
+                                    {
+                                        Console.Write("csrrs");
+                                    }
+
                                     UInt32 csr = GetCSR();
                                     if (csr == 0x341) //mepc
                                     {
@@ -899,7 +1037,11 @@ namespace Otter
                             case 3:
                                 {
                                     //read csr value into rd and clear bits of csr corresponding to 1s of value of rs1
-                                    Console.Write("csrrc");
+                                    if (showInstr || debug)
+                                    {
+                                        Console.Write("csrrc");
+                                    }
+
                                     UInt32 csr = GetCSR();
                                     if (csr == 0x341) //mepc
                                     {
@@ -930,7 +1072,18 @@ namespace Otter
                         }
                         if((ir & FUNC3_MASK)!=0)
                         {
-                            Console.WriteLine(" {0} 0x{1} {2}", REG_NAMES[GetRD()], Convert.ToString(GetCSR(), 16), REG_NAMES[GetRS1()]);
+                            if (showInstr || debug)
+                            {
+                                Console.WriteLine(" {0} 0x{1} {2}", REG_NAMES[GetRD()], Convert.ToString(GetCSR(), 16), REG_NAMES[GetRS1()]);
+                            }
+                            if(debug)
+                            {
+                                Console.WriteLine("rs1 {0} contains 0x{1}", REG_NAMES[GetRS1()], Convert.ToString(regs[GetRS1()], 16));
+                                Console.WriteLine("rd {0} contains 0x{1}", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()], 16));
+                                Console.WriteLine("mtvec contains 0x{0}", Convert.ToString(mtvec, 16));
+                                Console.WriteLine("mtvec contains 0x{0}", Convert.ToString(mepc, 16));
+                                Console.WriteLine("mtvec contains 0x{0}", Convert.ToString(mstatus, 16));
+                            }
                         }
                         break;
                     }
