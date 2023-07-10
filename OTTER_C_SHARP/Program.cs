@@ -8,7 +8,7 @@ namespace Otter
     {
         public static void Main(string[] args)
         {
-            OtterMCU otter = new OtterMCU(true, true, true); //create OTTER object
+            OtterMCU otter = new OtterMCU(true, false, false); //create OTTER object
         }
     }
 
@@ -171,6 +171,11 @@ namespace Otter
                                         {
                                             Console.WriteLine("FAIL");
                                             break;
+                                        }
+                                        else if(pc==0x1c)
+                                        {
+                                            Console.WriteLine("START LOOP");
+                                            Console.ReadLine();
                                         }
                                     }
                                     Console.Write(Convert.ToString(pc, 16) + ": END");
