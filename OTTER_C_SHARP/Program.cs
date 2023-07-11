@@ -186,6 +186,16 @@
         //runs through cycle for one instruction
         public void Run()
         {
+            if(RST) //if RST high, reset pc and csr registers
+            {
+                pc = 0;
+                mtvec = mepc = mstatus = 0;
+            }
+            else if(INTR) //if INTR high, go to interrupt state
+            {
+                Interrupt();
+            }
+
             if (showInstr)
             {
                 Console.Write(Convert.ToString(pc, 16) + ": ");
@@ -199,6 +209,14 @@
             }
 
             ParseInstruction();
+        }
+
+        //interrupt sequence
+        private void Interrupt()
+        {
+            mstatus = (mstatus & 0xFFFFFF77)|((mstatus&0x8)<<4); //copy mie bit to mpie bit and clear mie bit
+            mepc = pc; //set mepc to current pc
+            pc = mtvec; //set pc to mtvec
         }
 
         //load instruction from binary mem file into ir and set pc to pc+4
@@ -951,8 +969,9 @@
                                         Console.WriteLine("mtvec contains 0x{0}", Convert.ToString(mepc, 16));
                                         Console.WriteLine("pc is now 0x{0}", Convert.ToString(pc, 16));
                                     }
-
-                                    pc = mepc;
+                                    
+                                    mstatus = (mstatus & 0xFFFFFF77) | ((mstatus & 0x80) >> 4); //copy mpie bit to mie bit and clear mpie bit
+                                    pc = mepc; //set pc to mepc (value before interrupt)
                                     break;
                                 }
                             case 1:
