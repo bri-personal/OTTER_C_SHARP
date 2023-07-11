@@ -1,6 +1,4 @@
-﻿using System.Collections;
-
-namespace Otter
+﻿namespace Otter
 {
     //FIX: storing 0 to leds every time
 
@@ -8,7 +6,7 @@ namespace Otter
     {
         public static void Main(string[] args)
         {
-            OtterMCU otter = new OtterMCU(true, false, false); //create OTTER object
+            OtterMCU otter = new OtterMCU(true, false); //create OTTER object
         }
     }
 
@@ -111,14 +109,12 @@ namespace Otter
         private BinaryWriter dataWriter; //writer for data segment of memory
 
         public bool showInstr, debug; //flags to show verbose output or not
-        public bool wrongEndian; //flag to reverse bytes when loading from text segment
 
-        public OtterMCU(bool showInstr, bool debug, bool wrongEndian)
+        public OtterMCU(bool showInstr, bool debug)
         {
             //set output flags
             this.showInstr = showInstr;
             this.debug = debug;
-            this.wrongEndian = wrongEndian;
 
             //initialize MMIO addresses/values
             inputTable = new Dictionary<UInt32, UInt32>(1)
@@ -210,12 +206,6 @@ namespace Otter
         {
             text.Seek(pc, SeekOrigin.Begin);
             ir = textReader.ReadUInt32();
-
-            if (wrongEndian)
-            {
-                ir = ReverseBytes(ir); //if endianness is wrong
-            }
-
             pc = (UInt32)text.Seek(0, SeekOrigin.Current);
         }
 
@@ -303,11 +293,6 @@ namespace Otter
                         {
                             text.Seek(offset, SeekOrigin.Begin); //move text filestream to given offset
                             loadVal = textReader.ReadUInt32(); //load word from text
-
-                            if (wrongEndian)
-                            {
-                                loadVal = ReverseBytes(loadVal); //if endianness is wrong
-                            }
                         }
                         else if (offset < STACK_ADDR) //loading from data segment
                         {
@@ -636,11 +621,6 @@ namespace Otter
                         if (offset < DATA_ADDR) //storing to text segment - SHOULD NOT HAPPEN, but possible
                         {
                             text.Seek(offset, SeekOrigin.Begin); //move text filestream to given offset
-
-                            if (wrongEndian)
-                            {
-                                storeVal = ReverseBytes(storeVal); //if endianness wrong
-                            }
 
                             switch ((ir & FUNC3_MASK) >> 12)
                             {
@@ -1184,13 +1164,6 @@ namespace Otter
                 imm = imm | (i < 20 ? (ir & (1u << i)) : (ir & (1u << 31)) >> (31 - i));
             }
             return imm;
-        }
-
-        // reverse byte order (32-bit)
-        private static UInt32 ReverseBytes(UInt32 value)
-        {
-            return (value & 0x000000FFU) << 24 | (value & 0x0000FF00U) << 8 |
-                   (value & 0x00FF0000U) >> 8 | (value & 0xFF000000U) >> 24;
         }
     }
 }
