@@ -6,7 +6,7 @@
     {
         public static void Main(string[] args)
         {
-            OtterMCU otter = new OtterMCU(true, false); //create OTTER object
+            OtterMCU otter = new OtterMCU(false, false); //create OTTER object
         }
     }
 
@@ -789,6 +789,13 @@
                         {
                             Console.WriteLine(" {0} 0x{1}({2})", REG_NAMES[GetRS2()], Convert.ToString(GenerateImmed_S(), 16), REG_NAMES[GetRS1()]);
                         }
+
+                        //show MMIO output
+                        if (offset>=MMIO_ADDR)
+                        {
+                            Console.WriteLine("0x{0}: {1}", Convert.ToString(offset, 16).PadLeft(8, '0'), Convert.ToString(outputTable[offset], 16).PadLeft(8, '0'));
+                        }
+
                         if (debug)
                         {
                             Console.WriteLine("stored to address 0x{0}", Convert.ToString(offset, 16));
