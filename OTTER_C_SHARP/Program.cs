@@ -167,7 +167,9 @@
                                     //read and execute instructions
                                     while (pc <= 0x3f5c)
                                     {
-                                        Run();
+                                        Run(); //read and execute one instruction
+
+                                        //check for special addresses (for debugging only)
                                         if (pc == 0x84)
                                         {
                                             Console.WriteLine("FAIL");
@@ -182,6 +184,7 @@
                                             Console.WriteLine("ISR");
                                         }
 
+                                        //check for reset or interrupt
                                         string? input=Console.ReadLine();
                                         if(input is not null)
                                         {
