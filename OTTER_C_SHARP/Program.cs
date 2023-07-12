@@ -6,7 +6,7 @@
     {
         public static void Main(string[] args)
         {
-            OtterMCU otter = new OtterMCU(true, true); //create OTTER object
+            OtterMCU otter = new OtterMCU(false, true); //create OTTER object
             otter.Start();
         }
     }
@@ -210,25 +210,29 @@
         //runs through cycle for one instruction
         private void Run()
         {
-            if(RST) //if RST high, reset pc and csr registers
+            if (RST) //if RST high, reset pc and csr registers
             {
                 pc = 0;
                 mtvec = mepc = mstatus = 0;
                 RST = false; //set RST flag back to false
             }
-            else if(INTR && (mstatus&HEX_MASK)!=0) //if INTR high, go to interrupt state
+            else if (INTR)
             {
-                Interrupt();
+                if ((mstatus & HEX_MASK)!= 0) //if INTR high and interrupts enabled, go to interrupt state
+                {
+                    Interrupt();
+                }
+                INTR = false; //set INTR flag back to false
             }
 
-            if (showInstr)
+            if (showInstr || debug)
             {
                 Console.Write(Convert.ToString(pc, 16) + ": ");
             }
 
             LoadInstruction();
 
-            if (showInstr)
+            if (showInstr || debug)
             {
                 Console.Write(Convert.ToString(ir, 16).PadLeft(8, '0') + " ");
             }
@@ -242,7 +246,6 @@
             mstatus = (mstatus & INTR_MASK)|((mstatus&HEX_MASK)<<4); //copy mie bit to mpie bit and clear mie bit
             mepc = pc; //set mepc to current pc
             pc = mtvec; //set pc to mtvec
-            INTR = false; //set INTR flag back to false
         }
 
         //load instruction from binary mem file into ir and set pc to pc+4
