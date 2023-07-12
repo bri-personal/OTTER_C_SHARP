@@ -6,7 +6,8 @@
     {
         public static void Main(string[] args)
         {
-            OtterMCU otter = new OtterMCU(false, false); //create OTTER object
+            OtterMCU otter = new OtterMCU(true, true); //create OTTER object
+            otter.Start();
         }
     }
 
@@ -63,6 +64,8 @@
         private const UInt32 B_SIGN_SET_MASK =  0xFFFFFF00;
         private const UInt32 HALF_SIGN_MASK =   0x00008000;
         private const UInt32 H_SIGN_SET_MASK =  0xFFFF0000;
+        private const UInt32 INTR_MASK =        0xFFFFFF77;
+        private const UInt32 HEX_MASK =         0x00000008;
 
         //opcode constants
         private const byte LUI_OPCODE = 0x37;
@@ -88,25 +91,24 @@
 
 
         //external IO
-        public bool RST, INTR, CLK, IOBUS_WR;
-        public UInt32 IOBUS_IN, IOBUS_OUT, IOBUS_ADDR;
+        public bool RST, INTR;
 
         //internal components
-        public Dictionary<UInt32, UInt32> inputTable, outputTable; //MMIO addresses/values
-        public UInt32 pc; //program count
+        private Dictionary<UInt32, UInt32> inputTable, outputTable; //MMIO addresses/values
+        private UInt32 pc; //program count
         private UInt32[] regs; //data registers - length 32 array of 32 bit ints
         private UInt32 ir; //32 bit int to hold instruction read from text segment file
         private UInt32 mtvec; //32 bit int to hold address of ISR for CSR
         private UInt32 mepc; //32 bit int to hold return address when interrupt triggered
         private UInt32 mstatus; //32 bit int to hold MIE and MPIE bits for enabling interrupts
 
-        private FileStream text; //file for text segment of memory
-        private BinaryReader textReader; //reader for text segment of memory
-        private BinaryWriter textWriter; //writer for text segment of memory
+        private FileStream? text; //file for text segment of memory
+        private BinaryReader? textReader; //reader for text segment of memory
+        private BinaryWriter? textWriter; //writer for text segment of memory
 
-        private FileStream data; //file for data segment of memory
-        private BinaryReader dataReader; //reader for data segment of memory
-        private BinaryWriter dataWriter; //writer for data segment of memory
+        private FileStream? data; //file for data segment of memory
+        private BinaryReader? dataReader; //reader for data segment of memory
+        private BinaryWriter? dataWriter; //writer for data segment of memory
 
         public bool showInstr, debug; //flags to show verbose output or not
 
@@ -119,7 +121,7 @@
             //initialize MMIO addresses/values
             inputTable = new Dictionary<UInt32, UInt32>(1)
             {
-                { SW_ADDR, 2 } //b010 for switches -> pause if test fails but not after every test
+                { SW_ADDR, 1 } //b01 for switches -> enable interrupts
             };
 
             outputTable = new Dictionary<UInt32, UInt32>(2)
@@ -139,7 +141,10 @@
             {
                 regs[i] = 0;
             }
+        }
 
+        public void Start()
+        {
             using (text = File.Open("otter_memory.mem", FileMode.Open, FileAccess.ReadWrite))
             {
                 using (textReader = new BinaryReader(text))
@@ -163,15 +168,31 @@
                                     while (pc <= 0x3f5c)
                                     {
                                         Run();
-                                        if (pc == 0x22c)
+                                        if (pc == 0x84)
                                         {
                                             Console.WriteLine("FAIL");
                                             break;
                                         }
-                                        else if(pc==0x1c)
+                                        else if (pc == 0x3c)
                                         {
-                                            Console.WriteLine("START LOOP");
-                                            Console.ReadLine();
+                                            Console.WriteLine("LOOP");
+                                        }
+                                        else if (pc == 0xd4)
+                                        {
+                                            Console.WriteLine("ISR");
+                                        }
+
+                                        string? input=Console.ReadLine();
+                                        if(input is not null)
+                                        {
+                                            if(input.Equals("R"))
+                                            {
+                                                RST = true;
+                                            }
+                                            else if(input.Equals("I"))
+                                            {
+                                                INTR=true;
+                                            }
                                         }
                                     }
                                     Console.Write(Convert.ToString(pc, 16) + ": END");
@@ -184,14 +205,15 @@
         }
 
         //runs through cycle for one instruction
-        public void Run()
+        private void Run()
         {
             if(RST) //if RST high, reset pc and csr registers
             {
                 pc = 0;
                 mtvec = mepc = mstatus = 0;
+                RST = false; //set RST flag back to false
             }
-            else if(INTR) //if INTR high, go to interrupt state
+            else if(INTR && (mstatus&HEX_MASK)!=0) //if INTR high, go to interrupt state
             {
                 Interrupt();
             }
@@ -214,9 +236,10 @@
         //interrupt sequence
         private void Interrupt()
         {
-            mstatus = (mstatus & 0xFFFFFF77)|((mstatus&0x8)<<4); //copy mie bit to mpie bit and clear mie bit
+            mstatus = (mstatus & INTR_MASK)|((mstatus&HEX_MASK)<<4); //copy mie bit to mpie bit and clear mie bit
             mepc = pc; //set mepc to current pc
             pc = mtvec; //set pc to mtvec
+            INTR = false; //set INTR flag back to false
         }
 
         //load instruction from binary mem file into ir and set pc to pc+4
@@ -960,18 +983,19 @@
                             case 0:
                                 {
                                     //return execution to where it left off before interrupt, addr given by mepc
+                                    mstatus = (mstatus & INTR_MASK) | ((mstatus & BYTE_SIGN_MASK) >> 4); //copy mpie bit to mie bit and clear mpie bit
+                                    pc = mepc; //set pc to mepc (value before interrupt)
+
                                     if (showInstr || debug)
                                     {
                                         Console.WriteLine("mret");
                                     }
                                     if (debug)
                                     {
-                                        Console.WriteLine("mtvec contains 0x{0}", Convert.ToString(mepc, 16));
+                                        Console.WriteLine("mstatus contains 0x{0}", Convert.ToString(mstatus, 16));
                                         Console.WriteLine("pc is now 0x{0}", Convert.ToString(pc, 16));
                                     }
-                                    
-                                    mstatus = (mstatus & 0xFFFFFF77) | ((mstatus & 0x80) >> 4); //copy mpie bit to mie bit and clear mpie bit
-                                    pc = mepc; //set pc to mepc (value before interrupt)
+
                                     break;
                                 }
                             case 1:
@@ -1081,8 +1105,8 @@
                                 Console.WriteLine("rs1 {0} contains 0x{1}", REG_NAMES[GetRS1()], Convert.ToString(regs[GetRS1()], 16));
                                 Console.WriteLine("rd {0} contains 0x{1}", REG_NAMES[GetRD()], Convert.ToString(regs[GetRD()], 16));
                                 Console.WriteLine("mtvec contains 0x{0}", Convert.ToString(mtvec, 16));
-                                Console.WriteLine("mtvec contains 0x{0}", Convert.ToString(mepc, 16));
-                                Console.WriteLine("mtvec contains 0x{0}", Convert.ToString(mstatus, 16));
+                                Console.WriteLine("mepc contains 0x{0}", Convert.ToString(mepc, 16));
+                                Console.WriteLine("mstatus contains 0x{0}", Convert.ToString(mstatus, 16));
                             }
                         }
                         break;
