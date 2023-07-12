@@ -119,12 +119,12 @@
             this.debug = debug;
 
             //initialize MMIO addresses/values
-            inputTable = new Dictionary<UInt32, UInt32>(1)
+            inputTable = new Dictionary<UInt32, UInt32>()
             {
                 { SW_ADDR, 1 } //b01 for switches -> enable interrupts
             };
 
-            outputTable = new Dictionary<UInt32, UInt32>(2)
+            outputTable = new Dictionary<UInt32, UInt32>()
             {
                 { LED_ADDR, 0 },
                 { SEVSEG_ADDR, 0 },
@@ -248,8 +248,8 @@
         //load instruction from binary mem file into ir and set pc to pc+4
         private void LoadInstruction()
         {
-            text.Seek(pc, SeekOrigin.Begin);
-            ir = textReader.ReadUInt32();
+            text!.Seek(pc, SeekOrigin.Begin);
+            ir = textReader!.ReadUInt32();
             pc = (UInt32)text.Seek(0, SeekOrigin.Current);
         }
 
@@ -335,13 +335,13 @@
 
                         if (offset < DATA_ADDR) //loading from text segment - good assembly program shouldn't do this but it is possible
                         {
-                            text.Seek(offset, SeekOrigin.Begin); //move text filestream to given offset
-                            loadVal = textReader.ReadUInt32(); //load word from text
+                            text!.Seek(offset, SeekOrigin.Begin); //move text filestream to given offset
+                            loadVal = textReader!.ReadUInt32(); //load word from text
                         }
                         else if (offset < STACK_ADDR) //loading from data segment
                         {
-                            data.Seek(offset - DATA_ADDR, SeekOrigin.Begin); //move data filestream to given offset
-                            loadVal = dataReader.ReadUInt32(); //load word from data
+                            data!.Seek(offset - DATA_ADDR, SeekOrigin.Begin); //move data filestream to given offset
+                            loadVal = dataReader!.ReadUInt32(); //load word from data
                         }
                         else if (offset >= MMIO_ADDR) //loading from MMIO
                         {
@@ -664,7 +664,7 @@
 
                         if (offset < DATA_ADDR) //storing to text segment - SHOULD NOT HAPPEN, but possible
                         {
-                            text.Seek(offset, SeekOrigin.Begin); //move text filestream to given offset
+                            text!.Seek(offset, SeekOrigin.Begin); //move text filestream to given offset
 
                             switch ((ir & FUNC3_MASK) >> 12)
                             {
@@ -676,7 +676,7 @@
                                             Console.Write("sb");
                                         }
 
-                                        textWriter.Write((byte)storeVal);
+                                        textWriter!.Write((byte)storeVal);
                                         break;
                                     }
                                 case 1:
@@ -687,7 +687,7 @@
                                             Console.Write("sh");
                                         }
 
-                                        textWriter.Write((UInt16)storeVal);
+                                        textWriter!.Write((UInt16)storeVal);
                                         break;
                                     }
                                 case 2:
@@ -698,7 +698,7 @@
                                             Console.Write("sw");
                                         }
 
-                                        textWriter.Write(storeVal);
+                                        textWriter!.Write(storeVal);
                                         break;
                                     }
                                 default:
@@ -710,7 +710,7 @@
                         }
                         else if (offset < STACK_ADDR) //storing to data segment
                         {
-                            data.Seek(offset - DATA_ADDR, SeekOrigin.Begin); //move data filestream to given offset
+                            data!.Seek(offset - DATA_ADDR, SeekOrigin.Begin); //move data filestream to given offset
                             switch ((ir & FUNC3_MASK) >> 12)
                             {
                                 case 0:
@@ -721,7 +721,7 @@
                                             Console.Write("sb");
                                         }
 
-                                        dataWriter.Write((byte)storeVal);
+                                        dataWriter!.Write((byte)storeVal);
                                         break;
                                     }
                                 case 1:
@@ -732,7 +732,7 @@
                                             Console.Write("sh");
                                         }
 
-                                        dataWriter.Write((UInt16)storeVal);
+                                        dataWriter!.Write((UInt16)storeVal);
                                         break;
                                     }
                                 case 2:
@@ -743,7 +743,7 @@
                                             Console.Write("sw");
                                         }
 
-                                        dataWriter.Write(storeVal);
+                                        dataWriter!.Write(storeVal);
                                         break;
                                     }
                                 default:
