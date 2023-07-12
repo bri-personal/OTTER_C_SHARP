@@ -8,7 +8,7 @@
         {
             using (StreamReader hexReader = new StreamReader(hex))
             {
-                using (FileStream bin = File.Open("otter_memory.mem", FileMode.OpenOrCreate, FileAccess.Write))
+                using (FileStream bin = File.Open("bin.mem", FileMode.OpenOrCreate, FileAccess.Write))
                 {
                     using (StreamWriter binWriter = new StreamWriter(bin))
                     {
