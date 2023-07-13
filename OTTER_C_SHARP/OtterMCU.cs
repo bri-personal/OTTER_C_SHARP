@@ -1,16 +1,7 @@
 ﻿namespace Otter
 {
-    public class Program
-    {
-        public static void Main(string[] args)
-        {
-            OtterMCU otter = new OtterMCU(false, true); //create OTTER object
-            otter.Start();
-        }
-    }
-
-    public class OtterMCU
-    {
+     public class OtterMCU
+     {
         //specific register names array matches indices to names
         public static string[] REG_NAMES = new string[32]
             { "zero",
@@ -109,6 +100,12 @@
         private BinaryWriter? dataWriter; //writer for data segment of memory
 
         public bool showInstr, debug; //flags to show verbose output or not
+
+        public static void Main(string[] args)
+        {
+            OtterMCU otter = new OtterMCU(false, true);
+            otter.Start();
+        }
 
         public OtterMCU(bool showInstr, bool debug)
         {
