@@ -1,7 +1,5 @@
 ﻿namespace Otter
 {
-    //FIX: storing 0 to leds every time
-
     public class Program
     {
         public static void Main(string[] args)
@@ -94,7 +92,7 @@
         public bool RST, INTR;
 
         //internal components
-        private Dictionary<UInt32, UInt32> inputTable, outputTable; //MMIO addresses/values
+        public Dictionary<UInt32, UInt32> inputTable, outputTable; //MMIO addresses/values
         private UInt32 pc; //program count
         private UInt32[] regs; //data registers - length 32 array of 32 bit ints
         private UInt32 ir; //32 bit int to hold instruction read from text segment file
