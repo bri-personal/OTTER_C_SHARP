@@ -72,11 +72,12 @@
         private const UInt32 DATA_ADDR = 0x6000;
         private const UInt32 STACK_ADDR = 0x10000;
         private const UInt32 MMIO_ADDR = 0x11000000;
-        private const UInt32 SW_ADDR = MMIO_ADDR;
-        private const UInt32 LED_ADDR = MMIO_ADDR + 0x20;
-        private const UInt32 SEVSEG_ADDR = MMIO_ADDR + 0x40;
-        private const UInt32 VGA_PIXEL_ADDR = MMIO_ADDR + 0x120;
-        private const UInt32 VGA_COLOR_ADDR = MMIO_ADDR + 0x140;
+        public const UInt32 SW_ADDR = MMIO_ADDR;
+        public const UInt32 KB_ADDR = MMIO_ADDR + 0x100;
+        public const UInt32 LED_ADDR = MMIO_ADDR + 0x20;
+        public const UInt32 SEVSEG_ADDR = MMIO_ADDR + 0x40;
+        public const UInt32 VGA_PIXEL_ADDR = MMIO_ADDR + 0x120;
+        public const UInt32 VGA_COLOR_ADDR = MMIO_ADDR + 0x140;
 
 
         //external IO
@@ -104,7 +105,7 @@
         public static void Main(string[] args)
         {
             OtterMCU otter = new OtterMCU(false, true);
-            otter.Start();
+            otter.StartInConsole();
         }
 
         public OtterMCU(bool showInstr, bool debug)
@@ -116,7 +117,8 @@
             //initialize MMIO addresses/values
             inputTable = new Dictionary<UInt32, UInt32>()
             {
-                { SW_ADDR, 1 } //b01 for switches -> enable interrupts
+                { SW_ADDR, 0 },
+                { KB_ADDR, 0 }
             };
 
             outputTable = new Dictionary<UInt32, UInt32>()
@@ -136,74 +138,64 @@
             {
                 regs[i] = 0;
             }
+
+            //initialize file IO
+            text = File.Open("otter_memory.mem", FileMode.Open, FileAccess.ReadWrite);
+            textReader = new BinaryReader(text);
+            textWriter = new BinaryWriter(text);
+            data = File.Open("data.mem", FileMode.Create, FileAccess.ReadWrite);
+            dataReader = new BinaryReader(data);
+            dataWriter = new BinaryWriter(data);
+
+            //fill bits of data segment to 0
+            while (data.Position < STACK_ADDR - DATA_ADDR)
+            {
+                dataWriter.Write(0);
+            }
+            data.Seek(0, SeekOrigin.Begin); //return position to beginning
         }
 
-        public void Start()
+        public void StartInConsole()
         {
-            using (text = File.Open("otter_memory.mem", FileMode.Open, FileAccess.ReadWrite))
+            //read and execute instructions
+            while (pc <= 0x3f5c)
             {
-                using (textReader = new BinaryReader(text))
+                Run(); //read and execute one instruction
+
+                //check for special addresses (for debugging only)
+                if (pc == 0x84)
                 {
-                    using (textWriter = new BinaryWriter(text))
+                    Console.WriteLine("FAIL");
+                    break;
+                }
+                else if (pc == 0x3c)
+                {
+                    Console.WriteLine("LOOP");
+                }
+                else if (pc == 0xd4)
+                {
+                    Console.WriteLine("ISR");
+                }
+
+                //check for reset or interrupt
+                string? input=Console.ReadLine();
+                if(input is not null)
+                {
+                    if(input.Equals("R"))
                     {
-                        using (data = File.Open("data.mem", FileMode.Create, FileAccess.ReadWrite))
-                        {
-                            using (dataReader = new BinaryReader(data))
-                            {
-                                using (dataWriter = new BinaryWriter(data))
-                                {
-                                    //fill bits of data segment to 0
-                                    while (data.Position < STACK_ADDR - DATA_ADDR)
-                                    {
-                                        dataWriter.Write(0);
-                                    }
-                                    data.Seek(0, SeekOrigin.Begin); //return position to beginning
-
-                                    //read and execute instructions
-                                    while (pc <= 0x3f5c)
-                                    {
-                                        Run(); //read and execute one instruction
-
-                                        //check for special addresses (for debugging only)
-                                        if (pc == 0x84)
-                                        {
-                                            Console.WriteLine("FAIL");
-                                            break;
-                                        }
-                                        else if (pc == 0x3c)
-                                        {
-                                            Console.WriteLine("LOOP");
-                                        }
-                                        else if (pc == 0xd4)
-                                        {
-                                            Console.WriteLine("ISR");
-                                        }
-
-                                        //check for reset or interrupt
-                                        string? input=Console.ReadLine();
-                                        if(input is not null)
-                                        {
-                                            if(input.Equals("R"))
-                                            {
-                                                RST = true;
-                                            }
-                                            else if(input.Equals("I"))
-                                            {
-                                                INTR=true;
-                                            }
-                                        }
-                                    }
-                                    Console.Write(Convert.ToString(pc, 16) + ": END");
-                                }
-                            }
-                        }
+                        RST = true;
+                    }
+                    else if(input.Equals("I"))
+                    {
+                        INTR=true;
                     }
                 }
             }
+            Console.Write(Convert.ToString(pc, 16) + ": END");
         }
 
         //runs through cycle for one instruction
-        private void Run()
+        public void Run()
         {
             if (RST) //if RST high, reset pc and csr registers
             {
