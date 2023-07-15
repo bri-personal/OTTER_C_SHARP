@@ -5,6 +5,8 @@ VisualStudioVersion = 17.6.33717.318
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OTTER_C_SHARP", "OTTER_C_SHARP\OTTER_C_SHARP.csproj", "{F9F6DB15-2CC7-41C2-9701-92E2C445C061}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Otter_UI", "Otter_UI\Otter_UI.csproj", "{63DD4AD3-7DD5-4EAC-8E17-5FDB11124711}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{F9F6DB15-2CC7-41C2-9701-92E2C445C061}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F9F6DB15-2CC7-41C2-9701-92E2C445C061}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F9F6DB15-2CC7-41C2-9701-92E2C445C061}.Release|Any CPU.Build.0 = Release|Any CPU
+		{63DD4AD3-7DD5-4EAC-8E17-5FDB11124711}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{63DD4AD3-7DD5-4EAC-8E17-5FDB11124711}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{63DD4AD3-7DD5-4EAC-8E17-5FDB11124711}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{63DD4AD3-7DD5-4EAC-8E17-5FDB11124711}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
