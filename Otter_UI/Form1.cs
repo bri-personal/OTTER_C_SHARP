@@ -710,6 +710,7 @@ public partial class Form1 : Form
         }
     }
 
+    //get keyboard input in textbox and set keyboard MMIO input to keycode and set INTR high
     private void kbDriver_KeyPress(Object sender, KeyPressEventArgs e)
     {
         switch (char.ToUpper(e.KeyChar))
@@ -818,6 +819,46 @@ public partial class Form1 : Form
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x1A;
                 otter.INTR = true;
                 break;
+             case (char)Keys.D1:
+                otter.inputTable[OtterMCU.KB_ADDR] = 0x16;
+                otter.INTR = true;
+                break;
+            case (char)Keys.D2:
+                otter.inputTable[OtterMCU.KB_ADDR] = 0x1E;
+                otter.INTR = true;
+                break;
+            case (char)Keys.D3:
+                otter.inputTable[OtterMCU.KB_ADDR] = 0x26;
+                otter.INTR = true;
+                break;
+            case (char)Keys.D4:
+                otter.inputTable[OtterMCU.KB_ADDR] = 0x25;
+                otter.INTR = true;
+                break;
+            case (char)Keys.D5:
+                otter.inputTable[OtterMCU.KB_ADDR] = 0x2E;
+                otter.INTR = true;
+                break;
+            case (char)Keys.D6:
+                otter.inputTable[OtterMCU.KB_ADDR] = 0x36;
+                otter.INTR = true;
+                break;
+            case (char)Keys.D7:
+                otter.inputTable[OtterMCU.KB_ADDR] = 0x37;
+                otter.INTR = true;
+                break;
+            case (char)Keys.D0:
+                otter.inputTable[OtterMCU.KB_ADDR] = 0x45;
+                otter.INTR = true;
+                break;
+            case (char)Keys.D8:
+                otter.inputTable[OtterMCU.KB_ADDR] = 0x3E;
+                otter.INTR = true;
+                break;
+            case (char)Keys.D9:
+                otter.inputTable[OtterMCU.KB_ADDR] = 0x46;
+                otter.INTR = true;
+                break;
             case (char)Keys.Space:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x29;
                 otter.INTR = true;
@@ -833,6 +874,6 @@ public partial class Form1 : Form
             default:
                 break;
         }
-        e.Handled = true;
+        e.Handled = true; //handle event so character doesn't go into textbox
     }
 }
