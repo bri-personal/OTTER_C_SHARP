@@ -419,7 +419,7 @@ public partial class Form1 : Form
         otter.Run();
 
         //update MMIO
-        sevseg.Text = Convert.ToString(otter.outputTable[Otter.OtterMCU.SEVSEG_ADDR],16).ToUpper();
+        sevseg.Text = Convert.ToString(otter.outputTable[Otter.OtterMCU.SEVSEG_ADDR], 16).ToUpper();
 
         if ((otter.outputTable[Otter.OtterMCU.LED_ADDR] & 0x1) != 0)
         {
@@ -452,8 +452,8 @@ public partial class Form1 : Form
         {
             led3.ForeColor = Color.Lime;
         }
-        else 
-        { 
+        else
+        {
             led3.ForeColor = Color.DarkGray;
         }
 
@@ -461,17 +461,17 @@ public partial class Form1 : Form
         {
             led4.ForeColor = Color.Lime;
         }
-        else 
-        { 
+        else
+        {
             led4.ForeColor = Color.DarkGray;
         }
-        
+
         if ((otter.outputTable[Otter.OtterMCU.LED_ADDR] & 0x20) != 0)
         {
             led5.ForeColor = Color.Lime;
         }
-        else 
-        { 
+        else
+        {
             led5.ForeColor = Color.DarkGray;
         }
 
@@ -479,7 +479,7 @@ public partial class Form1 : Form
         {
             led6.ForeColor = Color.Lime;
         }
-        else 
+        else
         {
             led6.ForeColor = Color.DarkGray;
         }
@@ -488,8 +488,8 @@ public partial class Form1 : Form
         {
             led7.ForeColor = Color.Lime;
         }
-        else 
-        { 
+        else
+        {
             led7.ForeColor = Color.DarkGray;
         }
 
@@ -497,11 +497,11 @@ public partial class Form1 : Form
         {
             led8.ForeColor = Color.Lime;
         }
-        else 
+        else
         {
             led8.ForeColor = Color.DarkGray;
         }
-        
+
         if ((otter.outputTable[Otter.OtterMCU.LED_ADDR] & 0x200) != 0)
         {
             led9.ForeColor = Color.Lime;
@@ -651,7 +651,7 @@ public partial class Form1 : Form
             led25.ForeColor = Color.Lime;
         }
         else
-        { 
+        {
             led25.ForeColor = Color.DarkGray;
         }
 
@@ -711,169 +711,235 @@ public partial class Form1 : Form
     }
 
     //get keyboard input in textbox and set keyboard MMIO input to keycode and set INTR high
-    private void kbDriver_KeyPress(Object sender, KeyPressEventArgs e)
+    //Alt and Tab not included
+    private void kbDriver_KeyDown(Object sender, KeyEventArgs e)
     {
-        switch (char.ToUpper(e.KeyChar))
+        switch (e.KeyCode)
         {
-            case (char)Keys.A:
+            case Keys.A:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x1C;
                 otter.INTR = true;
                 break;
-            case (char)Keys.B:
+            case Keys.B:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x32;
                 otter.INTR = true;
                 break;
-            case (char)Keys.C:
+            case Keys.C:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x21;
                 otter.INTR = true;
                 break;
-            case (char)Keys.D:
+            case Keys.D:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x23;
                 otter.INTR = true;
                 break;
-            case (char)Keys.E:
+            case Keys.E:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x24;
                 otter.INTR = true;
                 break;
-            case (char)Keys.F:
+            case Keys.F:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x2B;
                 otter.INTR = true;
                 break;
-            case (char)Keys.G:
+            case Keys.G:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x34;
                 otter.INTR = true;
                 break;
-            case (char)Keys.H:
+            case Keys.H:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x33;
                 otter.INTR = true;
                 break;
-            case (char)Keys.I:
+            case Keys.I:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x43;
                 otter.INTR = true;
                 break;
-            case (char)Keys.J:
+            case Keys.J:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x3B;
                 otter.INTR = true;
                 break;
-            case (char)Keys.K:
+            case Keys.K:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x42;
                 otter.INTR = true;
                 break;
-            case (char)Keys.L:
+            case Keys.L:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x4B;
                 otter.INTR = true;
                 break;
-            case (char)Keys.M:
+            case Keys.M:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x3A;
                 otter.INTR = true;
                 break;
-            case (char)Keys.N:
+            case Keys.N:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x31;
                 otter.INTR = true;
                 break;
-            case (char)Keys.O:
+            case Keys.O:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x44;
                 otter.INTR = true;
                 break;
-            case (char)Keys.P:
+            case Keys.P:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x4D;
                 otter.INTR = true;
                 break;
-            case (char)Keys.Q:
+            case Keys.Q:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x15;
                 otter.INTR = true;
                 break;
-            case (char)Keys.R:
+            case Keys.R:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x2D;
                 otter.INTR = true;
                 break;
-            case (char)Keys.S:
+            case Keys.S:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x1B;
                 otter.INTR = true;
                 break;
-            case (char)Keys.T:
+            case Keys.T:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x2C;
                 otter.INTR = true;
                 break;
-            case (char)Keys.U:
+            case Keys.U:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x3C;
                 otter.INTR = true;
                 break;
-            case (char)Keys.V:
+            case Keys.V:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x2A;
                 otter.INTR = true;
                 break;
-            case (char)Keys.W:
+            case Keys.W:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x1D;
                 otter.INTR = true;
                 break;
-            case (char)Keys.X:
+            case Keys.X:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x22;
                 otter.INTR = true;
                 break;
-            case (char)Keys.Y:
+            case Keys.Y:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x35;
                 otter.INTR = true;
                 break;
-            case (char)Keys.Z:
+            case Keys.Z:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x1A;
                 otter.INTR = true;
                 break;
-             case (char)Keys.D1:
+            case Keys.D1:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x16;
                 otter.INTR = true;
                 break;
-            case (char)Keys.D2:
+            case Keys.D2:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x1E;
                 otter.INTR = true;
                 break;
-            case (char)Keys.D3:
+            case Keys.D3:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x26;
                 otter.INTR = true;
                 break;
-            case (char)Keys.D4:
+            case Keys.D4:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x25;
                 otter.INTR = true;
                 break;
-            case (char)Keys.D5:
+            case Keys.D5:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x2E;
                 otter.INTR = true;
                 break;
-            case (char)Keys.D6:
+            case Keys.D6:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x36;
                 otter.INTR = true;
                 break;
-            case (char)Keys.D7:
-                otter.inputTable[OtterMCU.KB_ADDR] = 0x37;
+            case Keys.D7:
+                otter.inputTable[OtterMCU.KB_ADDR] = 0x3D;
                 otter.INTR = true;
                 break;
-            case (char)Keys.D0:
-                otter.inputTable[OtterMCU.KB_ADDR] = 0x45;
-                otter.INTR = true;
-                break;
-            case (char)Keys.D8:
+            case Keys.D8:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x3E;
                 otter.INTR = true;
                 break;
-            case (char)Keys.D9:
+            case Keys.D9:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x46;
                 otter.INTR = true;
                 break;
-            case (char)Keys.Space:
+            case Keys.D0:
+                otter.inputTable[OtterMCU.KB_ADDR] = 0x45;
+                otter.INTR = true;
+                break;
+            case Keys.Oemcomma:
+                otter.inputTable[OtterMCU.KB_ADDR] = 0x41;
+                otter.INTR = true;
+                break;
+            case Keys.OemPeriod:
+                otter.inputTable[OtterMCU.KB_ADDR] = 0x49;
+                otter.INTR = true;
+                break;
+            case Keys.OemQuestion:
+                otter.inputTable[OtterMCU.KB_ADDR] = 0x4A;
+                otter.INTR = true;
+                break;
+            case Keys.OemSemicolon:
+                otter.inputTable[OtterMCU.KB_ADDR] = 0x4C;
+                otter.INTR = true;
+                break;
+            case Keys.OemQuotes:
+                otter.inputTable[OtterMCU.KB_ADDR] = 0x52;
+                otter.INTR = true;
+                break;
+            case Keys.OemOpenBrackets:
+                otter.inputTable[OtterMCU.KB_ADDR] = 0x54;
+                otter.INTR = true;
+                break;
+            case Keys.OemCloseBrackets:
+                otter.inputTable[OtterMCU.KB_ADDR] = 0x5B;
+                otter.INTR = true;
+                break;
+            case Keys.OemPipe:
+                otter.inputTable[OtterMCU.KB_ADDR] = 0x5D;
+                otter.INTR = true;
+                break;
+            case Keys.OemMinus:
+                otter.inputTable[OtterMCU.KB_ADDR] = 0x4E;
+                otter.INTR = true;
+                break;
+            case Keys.Oemplus:
+                otter.inputTable[OtterMCU.KB_ADDR] = 0x55;
+                otter.INTR = true;
+                break;
+            case Keys.Oemtilde:
+                otter.inputTable[OtterMCU.KB_ADDR] = 0x0E;
+                otter.INTR = true;
+                break;
+            case Keys.Space:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x29;
                 otter.INTR = true;
                 break;
-            case (char)Keys.Back:
+            case Keys.Back:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x66;
                 otter.INTR = true;
                 break;
-            case (char)Keys.Enter:
+            case Keys.Enter:
                 otter.inputTable[OtterMCU.KB_ADDR] = 0x5A;
+                otter.INTR = true;
+                break;
+            case Keys.ControlKey: //both control keys
+                otter.inputTable[OtterMCU.KB_ADDR] = 0x14;
+                otter.INTR = true;
+                break;
+            case Keys.ShiftKey: //both shift keys - NOT available in BASYS board
+                otter.inputTable[OtterMCU.KB_ADDR] = 0x12;
+                otter.INTR = true;
+                break;
+            case Keys.CapsLock: //NOT available in basys board
+                otter.inputTable[OtterMCU.KB_ADDR] = 0x58;
+                otter.INTR = true;
+                break;
+            case Keys.Escape:
+                otter.inputTable[OtterMCU.KB_ADDR] = 0x76;
                 otter.INTR = true;
                 break;
             default:
                 break;
         }
+
+    }
+
+    private void kbDriver_KeyPress(Object sender, KeyPressEventArgs e)
+    {
         e.Handled = true; //handle event so character doesn't go into textbox
     }
 }
