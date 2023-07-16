@@ -101,6 +101,11 @@ partial class Form1
         btnR = new Button();
         btnD = new Button();
         kbDriver = new TextBox();
+        vga = new PictureBox();
+        titleLabel1 = new Label();
+        titleLabel2 = new Label();
+        label1 = new Label();
+        ((System.ComponentModel.ISupportInitialize)vga).BeginInit();
         SuspendLayout();
         // 
         // sevseg
@@ -877,13 +882,57 @@ partial class Form1
         kbDriver.BackColor = Color.DarkBlue;
         kbDriver.BorderStyle = BorderStyle.FixedSingle;
         kbDriver.ForeColor = Color.DarkBlue;
-        kbDriver.Location = new Point(392, 465);
+        kbDriver.Location = new Point(418, 466);
         kbDriver.Margin = new Padding(3, 4, 3, 4);
         kbDriver.Name = "kbDriver";
-        kbDriver.Size = new Size(114, 27);
+        kbDriver.Size = new Size(53, 27);
         kbDriver.TabIndex = 69;
         kbDriver.KeyDown += kbDriver_KeyDown;
         kbDriver.KeyPress += kbDriver_KeyPress;
+        // 
+        // vga
+        // 
+        vga.BackColor = Color.Black;
+        vga.BorderStyle = BorderStyle.Fixed3D;
+        vga.Location = new Point(239, 26);
+        vga.Name = "vga";
+        vga.Size = new Size(400, 300);
+        vga.TabIndex = 70;
+        vga.TabStop = false;
+        vga.Paint += vga_Paint;
+        // 
+        // titleLabel1
+        // 
+        titleLabel1.AutoSize = true;
+        titleLabel1.Font = new Font("Showcard Gothic", 26F, FontStyle.Bold, GraphicsUnit.Point);
+        titleLabel1.ForeColor = Color.White;
+        titleLabel1.Location = new Point(17, 37);
+        titleLabel1.Name = "titleLabel1";
+        titleLabel1.Size = new Size(167, 54);
+        titleLabel1.TabIndex = 71;
+        titleLabel1.Text = "Otter";
+        // 
+        // titleLabel2
+        // 
+        titleLabel2.AutoSize = true;
+        titleLabel2.Font = new Font("Showcard Gothic", 26F, FontStyle.Bold, GraphicsUnit.Point);
+        titleLabel2.ForeColor = Color.White;
+        titleLabel2.Location = new Point(17, 91);
+        titleLabel2.Name = "titleLabel2";
+        titleLabel2.Size = new Size(118, 54);
+        titleLabel2.TabIndex = 72;
+        titleLabel2.Text = "MCU";
+        // 
+        // label1
+        // 
+        label1.AutoSize = true;
+        label1.Font = new Font("Showcard Gothic", 20F, FontStyle.Bold, GraphicsUnit.Point);
+        label1.ForeColor = Color.White;
+        label1.Location = new Point(17, 145);
+        label1.Name = "label1";
+        label1.Size = new Size(207, 43);
+        label1.TabIndex = 73;
+        label1.Text = "Emulator";
         // 
         // Form1
         // 
@@ -891,6 +940,10 @@ partial class Form1
         AutoScaleMode = AutoScaleMode.Font;
         BackColor = Color.DarkBlue;
         ClientSize = new Size(896, 588);
+        Controls.Add(label1);
+        Controls.Add(titleLabel2);
+        Controls.Add(titleLabel1);
+        Controls.Add(vga);
         Controls.Add(kbDriver);
         Controls.Add(btnD);
         Controls.Add(btnR);
@@ -965,6 +1018,7 @@ partial class Form1
         Margin = new Padding(3, 4, 3, 4);
         Name = "Form1";
         Text = "Otter MCU";
+        ((System.ComponentModel.ISupportInitialize)vga).EndInit();
         ResumeLayout(false);
         PerformLayout();
     }
@@ -1043,4 +1097,8 @@ partial class Form1
     private Button btnR;
     private Button btnD;
     private TextBox kbDriver;
+    private PictureBox vga;
+    private Label titleLabel1;
+    private Label titleLabel2;
+    private Label label1;
 }

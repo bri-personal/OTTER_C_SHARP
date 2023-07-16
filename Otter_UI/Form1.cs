@@ -1,14 +1,17 @@
+using System.Diagnostics;
 using Otter;
 
 namespace Otter_UI;
 
 public partial class Form1 : Form
 {
-    Otter.OtterMCU otter;
+    private OtterMCU otter;
+    private byte[,] vgaBuffer;
 
     public Form1()
     {
         otter = new Otter.OtterMCU(false, false);
+        vgaBuffer = new byte[60, 80];
         InitializeComponent();
     }
 
@@ -419,8 +422,14 @@ public partial class Form1 : Form
         otter.Run();
 
         //update MMIO
+        //seven segment display
         sevseg.Text = Convert.ToString(otter.outputTable[Otter.OtterMCU.SEVSEG_ADDR], 16).ToUpper();
 
+        //vga display
+        vgaBuffer[otter.outputTable[OtterMCU.VGA_PIXEL_ADDR] / 128, otter.outputTable[OtterMCU.VGA_PIXEL_ADDR] % 128] = (byte)otter.outputTable[OtterMCU.VGA_COLOR_ADDR];
+        Refresh();
+
+        //LEDs
         if ((otter.outputTable[Otter.OtterMCU.LED_ADDR] & 0x1) != 0)
         {
             led0.ForeColor = Color.Lime;
@@ -938,8 +947,35 @@ public partial class Form1 : Form
 
     }
 
+    //handle key press event so character doesn't go into textbox
     private void kbDriver_KeyPress(Object sender, KeyPressEventArgs e)
     {
-        e.Handled = true; //handle event so character doesn't go into textbox
+        e.Handled = true;
+    }
+
+    //paint color to screen
+    private void vga_Paint(object sender, System.Windows.Forms.PaintEventArgs e)
+    {
+        // Create a local version of the graphics object for the PictureBox.
+        Graphics g = e.Graphics;
+        SolidBrush b = new SolidBrush(Color.Black);
+
+        for (int i = 0; i < 80; i++)
+        {
+            for (int j = 0; j < 60; j++)
+            {
+                b.Color = GetColor(vgaBuffer[j, i]);
+                g.FillRectangle(b, i * vga.Width / 80, j * vga.Height / 60, vga.Width / 80, vga.Width / 60);
+            }
+        }
+    }
+
+    //method gets full Color struct from byte value given by assembly program
+    private Color GetColor(int val)
+    {
+        return Color.FromArgb(
+            ((((val >> 4) & 0xE) | ((val >> 5) & 0x1)) << 4),
+            ((((val >> 1) & 0xE) | ((val >> 2) & 0x1)) << 4),
+            ((((val << 1) & 0x6) | ((val << 2) & 0x8) | (val & 0x1)) << 4));
     }
 }

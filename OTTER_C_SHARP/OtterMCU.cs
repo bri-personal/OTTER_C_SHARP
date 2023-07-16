@@ -106,6 +106,7 @@
         {
             OtterMCU otter = new OtterMCU(false, true);
             otter.StartInConsole();
+            //HexReverser.ReverseHex();
         }
 
         public OtterMCU(bool showInstr, bool debug)
