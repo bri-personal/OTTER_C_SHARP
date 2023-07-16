@@ -111,6 +111,7 @@ partial class Form1
         // sevseg
         // 
         sevseg.BackColor = Color.Black;
+        sevseg.BorderStyle = BorderStyle.Fixed3D;
         sevseg.Font = new Font("Segoe UI", 36F, FontStyle.Regular, GraphicsUnit.Point);
         sevseg.ForeColor = Color.Red;
         sevseg.Location = new Point(346, 355);
