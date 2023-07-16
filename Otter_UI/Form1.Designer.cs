@@ -1017,7 +1017,7 @@ partial class Form1
         Controls.Add(sevseg);
         Margin = new Padding(3, 4, 3, 4);
         Name = "Form1";
-        Text = "Otter MCU";
+        Text = "Otter MCU Emulator";
         ((System.ComponentModel.ISupportInitialize)vga).EndInit();
         ResumeLayout(false);
         PerformLayout();
