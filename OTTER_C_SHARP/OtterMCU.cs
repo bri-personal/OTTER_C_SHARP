@@ -100,6 +100,8 @@
         private BinaryReader? dataReader; //reader for data segment of memory
         private BinaryWriter? dataWriter; //writer for data segment of memory
 
+        public byte[,] vgaBuffer; //2D array for vga pixels, can be read from and written to
+
         public bool showInstr, debug; //flags to show verbose output or not
 
         public static void Main(string[] args)
@@ -148,32 +150,34 @@
             dataReader = new BinaryReader(data);
             dataWriter = new BinaryWriter(data);
 
+            //fill remaining bits of text segment to 0
+            text.Seek(0, SeekOrigin.End);
+            while(text.Position<DATA_ADDR)
+            {
+                textWriter.Write(0);
+            }
+            text.Seek(0,SeekOrigin.Begin); //return position to beginning
+
             //fill bits of data segment to 0
             while (data.Position < STACK_ADDR - DATA_ADDR)
             {
                 dataWriter.Write(0);
             }
             data.Seek(0, SeekOrigin.Begin); //return position to beginning
+
+            //create 2D array for vga buffer pixels
+            vgaBuffer = new byte[60, 80];
         }
 
         public void StartInConsole()
         {
             //read and execute instructions
-            while (pc <= 0x3f5c)
+            while (true)
             {
                 Run(); //read and execute one instruction
 
                 //check for special addresses (for debugging only)
-                if (pc == 0x84)
-                {
-                    Console.WriteLine("FAIL");
-                    break;
-                }
-                else if (pc == 0x3c)
-                {
-                    Console.WriteLine("LOOP");
-                }
-                else if (pc == 0xd4)
+                if (pc == mtvec)
                 {
                     Console.WriteLine("ISR");
                 }
@@ -188,11 +192,21 @@
                     }
                     else if(input.Equals("I"))
                     {
-                        INTR=true;
+                        INTR = true;
                     }
                 }
             }
-            Console.Write(Convert.ToString(pc, 16) + ": END");
+            //Console.Write(Convert.ToString(pc, 16) + ": END");
+        }
+
+        //Infinite loop of running otter with no console IO
+        //To be called by UI
+        public void StartNoConsole()
+        {
+            while (true)
+            {
+                Run();
+            }
         }
 
         //runs through cycle for one instruction
@@ -818,6 +832,12 @@
                         else //reserved memory
                         {
                             throw new Exception("Cannot store to reserved memory");
+                        }
+
+                        //change vga buffer if needed
+                        if(offset==VGA_PIXEL_ADDR || offset == VGA_COLOR_ADDR)
+                        {
+                            vgaBuffer[outputTable[OtterMCU.VGA_PIXEL_ADDR] / 128, outputTable[OtterMCU.VGA_PIXEL_ADDR] % 128] = (byte)outputTable[OtterMCU.VGA_COLOR_ADDR];
                         }
 
                         if (showInstr || debug)

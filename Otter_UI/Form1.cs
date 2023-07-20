@@ -6,12 +6,10 @@ namespace Otter_UI;
 public partial class Form1 : Form
 {
     private OtterMCU otter;
-    private byte[,] vgaBuffer;
 
     public Form1()
     {
         otter = new Otter.OtterMCU(false, false);
-        vgaBuffer = new byte[60, 80];
         InitializeComponent();
     }
 
@@ -425,8 +423,7 @@ public partial class Form1 : Form
         //seven segment display
         sevseg.Text = Convert.ToString(otter.outputTable[Otter.OtterMCU.SEVSEG_ADDR], 16).ToUpper();
 
-        //vga display
-        vgaBuffer[otter.outputTable[OtterMCU.VGA_PIXEL_ADDR] / 128, otter.outputTable[OtterMCU.VGA_PIXEL_ADDR] % 128] = (byte)otter.outputTable[OtterMCU.VGA_COLOR_ADDR];
+        //update vga display
         Refresh();
 
         //LEDs
@@ -964,7 +961,7 @@ public partial class Form1 : Form
         {
             for (int j = 0; j < 60; j++)
             {
-                b.Color = GetColor(vgaBuffer[j, i]);
+                b.Color = GetColor(otter.vgaBuffer[j, i]);
                 g.FillRectangle(b, i * vga.Width / 80, j * vga.Height / 60, vga.Width / 80, vga.Width / 60);
             }
         }
