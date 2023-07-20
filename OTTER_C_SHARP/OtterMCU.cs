@@ -78,6 +78,7 @@
         public const UInt32 SEVSEG_ADDR = MMIO_ADDR + 0x40;
         public const UInt32 VGA_PIXEL_ADDR = MMIO_ADDR + 0x120;
         public const UInt32 VGA_COLOR_ADDR = MMIO_ADDR + 0x140;
+        public const UInt32 VGA_READ_ADDR = MMIO_ADDR + 0x160;
 
 
         //external IO
@@ -121,7 +122,8 @@
             inputTable = new Dictionary<UInt32, UInt32>()
             {
                 { SW_ADDR, 0 },
-                { KB_ADDR, 0 }
+                { KB_ADDR, 0 },
+                { VGA_READ_ADDR, 0 }
             };
 
             outputTable = new Dictionary<UInt32, UInt32>()
@@ -350,6 +352,12 @@
                         }
                         else if (offset >= MMIO_ADDR) //loading from MMIO
                         {
+                            //read vga buffer if needed
+                            if (offset == VGA_READ_ADDR)
+                            {
+                                inputTable[OtterMCU.VGA_READ_ADDR]=vgaBuffer[outputTable[OtterMCU.VGA_PIXEL_ADDR] / 128, outputTable[OtterMCU.VGA_PIXEL_ADDR] % 128];
+                            }
+
                             if (!inputTable.TryGetValue(offset, out loadVal)) //load word from data
                             {
                                 //unimplemented MMIO address
@@ -835,7 +843,7 @@
                         }
 
                         //change vga buffer if needed
-                        if(offset==VGA_PIXEL_ADDR || offset == VGA_COLOR_ADDR)
+                        if(offset == VGA_COLOR_ADDR)
                         {
                             vgaBuffer[outputTable[OtterMCU.VGA_PIXEL_ADDR] / 128, outputTable[OtterMCU.VGA_PIXEL_ADDR] % 128] = (byte)outputTable[OtterMCU.VGA_COLOR_ADDR];
                         }
