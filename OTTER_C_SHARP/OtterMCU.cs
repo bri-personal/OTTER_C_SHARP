@@ -879,19 +879,13 @@
                             throw new Exception("Cannot store to reserved memory");
                         }
 
-                        //change vga buffer if needed
-                        if(offset == VGA_COLOR_ADDR)
-                        {
-                            vgaBuffer[outputTable[OtterMCU.VGA_PIXEL_ADDR] / 128, outputTable[OtterMCU.VGA_PIXEL_ADDR] % 128] = (byte)outputTable[OtterMCU.VGA_COLOR_ADDR];
-                        }
-
                         if (showInstr || debug)
                         {
                             Console.WriteLine(" {0} 0x{1}({2})", REG_NAMES[GetRS2()], Convert.ToString(GenerateImmed_S(), 16), REG_NAMES[GetRS1()]);
                         }
 
                         //show MMIO output
-                        if (offset>=MMIO_ADDR)
+                        if (offset >= MMIO_ADDR)
                         {
                             Console.WriteLine("0x{0}: {1}", Convert.ToString(offset, 16).PadLeft(8, '0'), Convert.ToString(outputTable[offset], 16).PadLeft(8, '0'));
                         }
@@ -900,6 +894,12 @@
                         {
                             Console.WriteLine("stored to address 0x{0}", Convert.ToString(offset, 16));
                             Console.WriteLine("rs2 {0} contains 0x{1}\n", REG_NAMES[GetRS2()], Convert.ToString(regs[GetRS2()], 16));
+                        }
+
+                        //change vga buffer if needed
+                        if (offset == VGA_COLOR_ADDR)
+                        {
+                            vgaBuffer[outputTable[OtterMCU.VGA_PIXEL_ADDR] / 128, outputTable[OtterMCU.VGA_PIXEL_ADDR] % 128] = (byte)outputTable[OtterMCU.VGA_COLOR_ADDR];
                         }
 
                         break;

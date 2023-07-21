@@ -895,7 +895,6 @@ partial class Form1
         // vga
         // 
         vga.BackColor = Color.Black;
-        vga.BorderStyle = BorderStyle.Fixed3D;
         vga.Location = new Point(239, 26);
         vga.Name = "vga";
         vga.Size = new Size(400, 300);
