@@ -104,7 +104,8 @@ partial class Form1
         vga = new PictureBox();
         titleLabel1 = new Label();
         titleLabel2 = new Label();
-        label1 = new Label();
+        titleLabel3 = new Label();
+        otterRunner = new System.ComponentModel.BackgroundWorker();
         ((System.ComponentModel.ISupportInitialize)vga).BeginInit();
         SuspendLayout();
         // 
@@ -924,16 +925,20 @@ partial class Form1
         titleLabel2.TabIndex = 72;
         titleLabel2.Text = "MCU";
         // 
-        // label1
+        // titleLabel3
         // 
-        label1.AutoSize = true;
-        label1.Font = new Font("Showcard Gothic", 20F, FontStyle.Bold, GraphicsUnit.Point);
-        label1.ForeColor = Color.White;
-        label1.Location = new Point(17, 145);
-        label1.Name = "label1";
-        label1.Size = new Size(207, 43);
-        label1.TabIndex = 73;
-        label1.Text = "Emulator";
+        titleLabel3.AutoSize = true;
+        titleLabel3.Font = new Font("Showcard Gothic", 20F, FontStyle.Bold, GraphicsUnit.Point);
+        titleLabel3.ForeColor = Color.White;
+        titleLabel3.Location = new Point(17, 145);
+        titleLabel3.Name = "titleLabel3";
+        titleLabel3.Size = new Size(207, 43);
+        titleLabel3.TabIndex = 73;
+        titleLabel3.Text = "Emulator";
+        // 
+        // otterRunner
+        // 
+        otterRunner.DoWork += otterRunner_DoWork;
         // 
         // Form1
         // 
@@ -941,7 +946,7 @@ partial class Form1
         AutoScaleMode = AutoScaleMode.Font;
         BackColor = Color.DarkBlue;
         ClientSize = new Size(896, 588);
-        Controls.Add(label1);
+        Controls.Add(titleLabel3);
         Controls.Add(titleLabel2);
         Controls.Add(titleLabel1);
         Controls.Add(vga);
@@ -1101,5 +1106,6 @@ partial class Form1
     private PictureBox vga;
     private Label titleLabel1;
     private Label titleLabel2;
-    private Label label1;
+    private Label titleLabel3;
+    private System.ComponentModel.BackgroundWorker otterRunner;
 }

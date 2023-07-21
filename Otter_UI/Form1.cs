@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using Otter;
 
@@ -11,6 +12,7 @@ public partial class Form1 : Form
     {
         otter = new Otter.OtterMCU(false, false);
         InitializeComponent();
+        otterRunner.RunWorkerAsync();
     }
 
     //sw# check changed sets corresponding bit of switches MMIO in Otter to 1 or 0
@@ -416,9 +418,6 @@ public partial class Form1 : Form
     //every clock tick, run one instruction and update MMIO outputs
     private void clock_Tick(object sender, EventArgs e)
     {
-        //run one cycle
-        otter.Run();
-
         //update MMIO
         //seven segment display
         sevseg.Text = Convert.ToString(otter.outputTable[Otter.OtterMCU.SEVSEG_ADDR], 16).ToUpper();
@@ -974,5 +973,14 @@ public partial class Form1 : Form
             ((((val >> 4) & 0xE) | ((val >> 5) & 0x1)) << 4),
             ((((val >> 1) & 0xE) | ((val >> 2) & 0x1)) << 4),
             ((((val << 1) & 0x6) | ((val << 2) & 0x8) | (val & 0x1)) << 4));
+    }
+
+    private void otterRunner_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e)
+    {
+        // Get the BackgroundWorker that raised this event.
+        BackgroundWorker worker = sender as BackgroundWorker;
+
+        // Start otter running in background
+        otter.StartNoConsole();
     }
 }
