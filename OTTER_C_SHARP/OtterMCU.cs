@@ -144,71 +144,108 @@
                 regs[i] = 0;
             }
 
-            //initialize file IO
-            text = File.Open("otter_memory.mem", FileMode.Open, FileAccess.ReadWrite);
-            textReader = new BinaryReader(text);
-            textWriter = new BinaryWriter(text);
-            data = File.Open("data.mem", FileMode.Create, FileAccess.ReadWrite);
-            dataReader = new BinaryReader(data);
-            dataWriter = new BinaryWriter(data);
-
-            //fill remaining bits of text segment to 0
-            text.Seek(0, SeekOrigin.End);
-            while(text.Position<DATA_ADDR)
-            {
-                textWriter.Write(0);
-            }
-            text.Seek(0,SeekOrigin.Begin); //return position to beginning
-
-            //fill bits of data segment to 0
-            while (data.Position < STACK_ADDR - DATA_ADDR)
-            {
-                dataWriter.Write(0);
-            }
-            data.Seek(0, SeekOrigin.Begin); //return position to beginning
-
             //create 2D array for vga buffer pixels
             vgaBuffer = new byte[60, 80];
         }
 
         public void StartInConsole()
         {
-            //read and execute instructions
-            while (true)
+            using(text = File.Open("otter_memory.mem", FileMode.Open, FileAccess.ReadWrite))
             {
-                Run(); //read and execute one instruction
-
-                //check for special addresses (for debugging only)
-                if (pc == mtvec)
+                using(textReader = new BinaryReader(text))
                 {
-                    Console.WriteLine("ISR");
-                }
+                    using(textWriter = new BinaryWriter(text))
+                    {
+                        using(data = File.Open("data.mem", FileMode.Create, FileAccess.ReadWrite))
+                        {
+                            using(dataReader = new BinaryReader(data))
+                            {
+                                using(dataWriter = new BinaryWriter(data))
+                                {
+                                    //fill remaining bits of memory files
+                                    fillMemory();
 
-                //check for reset or interrupt
-                string? input=Console.ReadLine();
-                if(input is not null)
-                {
-                    if(input.Equals("R"))
-                    {
-                        RST = true;
-                    }
-                    else if(input.Equals("I"))
-                    {
-                        INTR = true;
+                                    //read and execute instructions
+                                    while (true)
+                                    {
+                                        Run(); //read and execute one instruction
+
+                                        //check for special addresses (for debugging only)
+                                        if (pc == mtvec)
+                                        {
+                                            Console.WriteLine("ISR");
+                                        }
+
+                                        //check for reset or interrupt
+                                        string? input = Console.ReadLine();
+                                        if (input is not null)
+                                        {
+                                            if (input.Equals("R"))
+                                            {
+                                                RST = true;
+                                            }
+                                            else if (input.Equals("I"))
+                                            {
+                                                INTR = true;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
-            //Console.Write(Convert.ToString(pc, 16) + ": END");
         }
 
         //Infinite loop of running otter with no console IO
         //To be called by UI
         public void StartNoConsole()
         {
-            while (true)
+            using (text = File.Open("otter_memory.mem", FileMode.Open, FileAccess.ReadWrite))
             {
-                Run();
+                using (textReader = new BinaryReader(text))
+                {
+                    using (textWriter = new BinaryWriter(text))
+                    {
+                        using (data = File.Open("data.mem", FileMode.Create, FileAccess.ReadWrite))
+                        {
+                            using (dataReader = new BinaryReader(data))
+                            {
+                                using (dataWriter = new BinaryWriter(data))
+                                {
+                                    //fill remaining bits of memory files
+                                    fillMemory();
+
+                                    while (true)
+                                    {
+                                        Run();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
+        }
+
+        //fill extra bits of memory files
+        private void fillMemory()
+        {
+            //fill remaining bits of text segment to 0
+            text!.Seek(0, SeekOrigin.End);
+            while (text.Position < DATA_ADDR)
+            {
+                textWriter!.Write(0);
+            }
+            text.Seek(0, SeekOrigin.Begin); //return position to beginning
+
+            //fill bits of data segment to 0
+            while (data!.Position < STACK_ADDR - DATA_ADDR)
+            {
+                dataWriter!.Write(0);
+            }
+            data.Seek(0, SeekOrigin.Begin); //return position to beginning
         }
 
         //runs through cycle for one instruction
