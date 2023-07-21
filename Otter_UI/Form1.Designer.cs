@@ -29,6 +29,7 @@ partial class Form1
     private void InitializeComponent()
     {
         components = new System.ComponentModel.Container();
+        System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
         sevseg = new Label();
         sw0 = new CheckBox();
         sw1 = new CheckBox();
@@ -1020,6 +1021,7 @@ partial class Form1
         Controls.Add(sw1);
         Controls.Add(sw0);
         Controls.Add(sevseg);
+        Icon = (Icon)resources.GetObject("$this.Icon");
         Margin = new Padding(3, 4, 3, 4);
         Name = "Form1";
         Text = "Otter MCU Emulator";
