@@ -397,14 +397,14 @@
                             if(offset == RAND_ADDR)
                             {
                                 Random r = new Random();
-                                outputTable[RAND_ADDR]=(UInt32) r.Next(Int32.MinValue, Int32.MaxValue);
+                                inputTable[RAND_ADDR]=(UInt32) r.Next(Int32.MinValue, Int32.MaxValue);
                             }
                             //read vga buffer if needed
                             else if (offset == VGA_READ_ADDR)
                             {
                                 inputTable[VGA_READ_ADDR]=vgaBuffer[outputTable[VGA_PIXEL_ADDR] / 128, outputTable[VGA_PIXEL_ADDR] % 128];
                             }
-
+                            Console.WriteLine("offset:"+Convert.ToString(offset,16));
                             if (!inputTable.TryGetValue(offset, out loadVal)) //load word from data
                             {
                                 //unimplemented MMIO address
