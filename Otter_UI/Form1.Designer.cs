@@ -1,4 +1,6 @@
-﻿namespace Otter_UI;
+﻿using System.Media;
+
+namespace Otter_UI;
 
 partial class Form1
 {
@@ -107,7 +109,10 @@ partial class Form1
         titleLabel2 = new Label();
         titleLabel3 = new Label();
         otterRunner = new System.ComponentModel.BackgroundWorker();
+        speaker = new SoundPlayer();
+        speakerImage = new PictureBox();
         ((System.ComponentModel.ISupportInitialize)vga).BeginInit();
+        ((System.ComponentModel.ISupportInitialize)speakerImage).BeginInit();
         SuspendLayout();
         // 
         // sevseg
@@ -940,12 +945,30 @@ partial class Form1
         // 
         otterRunner.DoWork += otterRunner_DoWork;
         // 
+        // speaker
+        // 
+        speaker.LoadTimeout = 10000;
+        speaker.SoundLocation = "";
+        speaker.Stream = null;
+        speaker.Tag = null;
+        // 
+        // speakerImage
+        // 
+        speakerImage.BackgroundImage = (Image)resources.GetObject("speakerImage.BackgroundImage");
+        speakerImage.BackgroundImageLayout = ImageLayout.Zoom;
+        speakerImage.Location = new Point(693, 91);
+        speakerImage.Name = "speakerImage";
+        speakerImage.Size = new Size(150, 150);
+        speakerImage.TabIndex = 74;
+        speakerImage.TabStop = false;
+        // 
         // Form1
         // 
         AutoScaleDimensions = new SizeF(8F, 20F);
         AutoScaleMode = AutoScaleMode.Font;
         BackColor = Color.DarkBlue;
         ClientSize = new Size(896, 588);
+        Controls.Add(speakerImage);
         Controls.Add(titleLabel3);
         Controls.Add(titleLabel2);
         Controls.Add(titleLabel1);
@@ -1026,6 +1049,7 @@ partial class Form1
         Name = "Form1";
         Text = "Otter MCU Emulator";
         ((System.ComponentModel.ISupportInitialize)vga).EndInit();
+        ((System.ComponentModel.ISupportInitialize)speakerImage).EndInit();
         ResumeLayout(false);
         PerformLayout();
     }
@@ -1109,4 +1133,6 @@ partial class Form1
     private Label titleLabel2;
     private Label titleLabel3;
     private System.ComponentModel.BackgroundWorker otterRunner;
+    private SoundPlayer speaker;
+    private PictureBox speakerImage;
 }

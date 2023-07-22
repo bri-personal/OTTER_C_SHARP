@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using System.Diagnostics;
 using Otter;
 
 namespace Otter_UI;
@@ -7,10 +6,12 @@ namespace Otter_UI;
 public partial class Form1 : Form
 {
     private OtterMCU otter;
+    private byte spkBuffer;
 
     public Form1()
     {
         otter = new Otter.OtterMCU(false, false);
+        spkBuffer = 0;
         InitializeComponent();
         otterRunner.RunWorkerAsync();
     }
@@ -424,6 +425,28 @@ public partial class Form1 : Form
 
         //update vga display
         Refresh();
+
+        //update speaker
+        if (spkBuffer != otter.outputTable[OtterMCU.SPK_ADDR])
+        {
+            spkBuffer = (byte)otter.outputTable[OtterMCU.SPK_ADDR];
+            if (spkBuffer < 1 || spkBuffer > 48)
+            {
+                speaker.Stop();
+            }
+            else
+            {
+                try
+                {
+                    speaker.SoundLocation = @"sounds\" + spkBuffer + ".wav";
+                    speaker.PlayLooping();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message, "Error playing sound");
+                }
+            }
+        }
 
         //LEDs
         if ((otter.outputTable[Otter.OtterMCU.LED_ADDR] & 0x1) != 0)
