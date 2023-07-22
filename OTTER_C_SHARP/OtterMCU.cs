@@ -73,9 +73,11 @@
         private const UInt32 STACK_ADDR = 0x10000;
         private const UInt32 MMIO_ADDR = 0x11000000;
         public const UInt32 SW_ADDR = MMIO_ADDR;
+        public const UInt32 RAND_ADDR = MMIO_ADDR + 0x60;
         public const UInt32 KB_ADDR = MMIO_ADDR + 0x100;
         public const UInt32 LED_ADDR = MMIO_ADDR + 0x20;
         public const UInt32 SEVSEG_ADDR = MMIO_ADDR + 0x40;
+        public const UInt32 SPK_ADDR = MMIO_ADDR + 0x80;
         public const UInt32 VGA_PIXEL_ADDR = MMIO_ADDR + 0x120;
         public const UInt32 VGA_COLOR_ADDR = MMIO_ADDR + 0x140;
         public const UInt32 VGA_READ_ADDR = MMIO_ADDR + 0x160;
@@ -122,6 +124,7 @@
             inputTable = new Dictionary<UInt32, UInt32>()
             {
                 { SW_ADDR, 0 },
+                { RAND_ADDR, 0 },
                 { KB_ADDR, 0 },
                 { VGA_READ_ADDR, 0 }
             };
@@ -130,6 +133,7 @@
             {
                 { LED_ADDR, 0 },
                 { SEVSEG_ADDR, 0 },
+                { SPK_ADDR, 0 },
                 { VGA_PIXEL_ADDR, 0 },
                 { VGA_COLOR_ADDR, 0 }
             };
@@ -389,10 +393,16 @@
                         }
                         else if (offset >= MMIO_ADDR) //loading from MMIO
                         {
-                            //read vga buffer if needed
-                            if (offset == VGA_READ_ADDR)
+                            //get random number if needed
+                            if(offset == RAND_ADDR)
                             {
-                                inputTable[OtterMCU.VGA_READ_ADDR]=vgaBuffer[outputTable[OtterMCU.VGA_PIXEL_ADDR] / 128, outputTable[OtterMCU.VGA_PIXEL_ADDR] % 128];
+                                Random r = new Random();
+                                outputTable[RAND_ADDR]=(UInt32) r.Next(Int32.MinValue, Int32.MaxValue);
+                            }
+                            //read vga buffer if needed
+                            else if (offset == VGA_READ_ADDR)
+                            {
+                                inputTable[VGA_READ_ADDR]=vgaBuffer[outputTable[VGA_PIXEL_ADDR] / 128, outputTable[VGA_PIXEL_ADDR] % 128];
                             }
 
                             if (!inputTable.TryGetValue(offset, out loadVal)) //load word from data
@@ -899,7 +909,7 @@
                         //change vga buffer if needed
                         if (offset == VGA_COLOR_ADDR)
                         {
-                            vgaBuffer[outputTable[OtterMCU.VGA_PIXEL_ADDR] / 128, outputTable[OtterMCU.VGA_PIXEL_ADDR] % 128] = (byte)outputTable[OtterMCU.VGA_COLOR_ADDR];
+                            vgaBuffer[outputTable[VGA_PIXEL_ADDR] / 128, outputTable[VGA_PIXEL_ADDR] % 128] = (byte)outputTable[VGA_COLOR_ADDR];
                         }
 
                         break;
