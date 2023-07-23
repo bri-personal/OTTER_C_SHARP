@@ -956,9 +956,9 @@ partial class Form1
         // 
         speakerImage.BackgroundImage = (Image)resources.GetObject("speakerImage.BackgroundImage");
         speakerImage.BackgroundImageLayout = ImageLayout.Zoom;
-        speakerImage.Location = new Point(693, 91);
+        speakerImage.Location = new Point(693, 105);
         speakerImage.Name = "speakerImage";
-        speakerImage.Size = new Size(150, 150);
+        speakerImage.Size = new Size(128, 128);
         speakerImage.TabIndex = 74;
         speakerImage.TabStop = false;
         // 
