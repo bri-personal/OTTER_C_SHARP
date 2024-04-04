@@ -408,12 +408,12 @@
                             if (!inputTable.TryGetValue(offset, out loadVal)) //load word from data
                             {
                                 //unimplemented MMIO address
-                                throw new IOException($"MMIO address {offset} is not connected to an input device");
+                                throw new IOException($"MMIO address 0x{offset} is not connected to an input device (pc 0x{Convert.ToString(pc, 16)})");
                             }
                         }
                         else //reserved memory
                         {
-                            throw new Exception($"Cannot load from address 0x{Convert.ToString(offset, 16)} in reserved memory");
+                            throw new Exception($"Cannot load from address 0x{Convert.ToString(offset, 16)} in reserved memory (pc 0x{Convert.ToString(pc, 16)})");
                         }
 
                         //if necessary, mask loaded data
@@ -482,7 +482,7 @@
                             default:
                                 {
                                     //unknown func3
-                                    throw new Exception("Instruction func3 does not correspond to any known instruction");
+                                    throw new Exception($"Instruction func3 does not correspond to any known instruction (pc 0x{Convert.ToString(pc, 16)})");
                                 }
                         }
                         setRD(loadVal); //set value of rd to loaded value
@@ -700,7 +700,7 @@
                             default:
                                 {
                                     //unknown func3
-                                    throw new Exception("Instruction func3 does not correspond to any known instruction");
+                                    throw new Exception($"Instruction func3 does not correspond to any known instruction (pc 0x{Convert.ToString(pc, 16)})");
                                 }
                         }
 
@@ -833,7 +833,7 @@
                                         else
                                         {
                                             //unimplemented MMIO address
-                                            throw new IOException($"MMIO address {offset} is not connected to an output device");
+                                            throw new IOException($"MMIO address 0x{Convert.ToString(offset,16)} is not connected to an output device (pc 0x{Convert.ToString(pc, 16)})");
                                         }
                                         break;
                                     }
@@ -909,7 +909,14 @@
                         //change vga buffer if needed
                         if (offset == VGA_COLOR_ADDR)
                         {
-                            vgaBuffer[outputTable[VGA_PIXEL_ADDR] / 128, outputTable[VGA_PIXEL_ADDR] % 128] = (byte)outputTable[VGA_COLOR_ADDR];
+                            try
+                            {
+                                vgaBuffer[outputTable[VGA_PIXEL_ADDR] / 128, outputTable[VGA_PIXEL_ADDR] % 128] = (byte)outputTable[VGA_COLOR_ADDR];
+                            }
+                            catch
+                            {
+                                throw new Exception($"Exception when writing to VGA on pc 0x{Convert.ToString(pc, 16)}");
+                            }
                         }
 
                         break;
@@ -1183,7 +1190,7 @@
                 default:
                     {
                         //unknown opcode
-                        throw new Exception("Instruction opcode does not correspond to any known instruction");
+                        throw new Exception($"Instruction opcode in instruction 0x{Convert.ToString(ir, 16)} at pc 0x{Convert.ToString(pc,16)} does not correspond to any known instruction");
                     }
             }
         }
